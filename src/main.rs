@@ -14,7 +14,10 @@ use crate::controls::{Action, ControlHandler};
    https://macroquad.rs/articles/android/
  ***/
 
-const MOVEMENT_RELATIVE_TO_MOUSE: bool = true;
+// if true, controls will be relative to mouse direction rather than up / down / left / right
+const MOVEMENT_RELATIVE_TO_MOUSE: bool = false;
+// if true, player will always move towards the mouse
+const MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED: bool = false;
 
 mod player;
 mod controls;
@@ -59,7 +62,7 @@ async fn main() {
         } else {
             0.0
         };
-        println!("FPS: {}", fps);
+        //println!("FPS: {}", fps);
 
         // clear the background and give a default color
         clear_background(Color::from_rgba(222, 192, 138, 255));
@@ -80,13 +83,22 @@ async fn main() {
 
         let actions = control_handler.get_keys_down();
         let mut movement = vec2(0.0, 0.0);
+        if MOVEMENT_RELATIVE_TO_MOUSE && MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED {
+            if !player.is_on_mouse() && !control_handler.is_action_pressed(Action::MoveDown) {
+                println!("Player Position: {}x | {}y | {}deg", player.pos.x, player.pos.y, player.rotation.to_degrees());
+                movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
+                movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
+            }
+        }
         for action in actions {
             match action {
                 // todo: add limits like obstacles
                 Action::MoveUp => {
                     if MOVEMENT_RELATIVE_TO_MOUSE {
-                        movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
-                        movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
+                        if !player.is_on_mouse() && !MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED {
+                            movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
+                            movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
+                        }
                     } else {
                         movement.y -= 1.0;
                     }
@@ -94,7 +106,7 @@ async fn main() {
                 Action::MoveDown => {
                     if MOVEMENT_RELATIVE_TO_MOUSE {
                         movement.x += (player.rotation + std::f32::consts::PI / 2.0).cos();
-                        movement.y += (player.rotation + std::f32::consts::PI / 2.0).sin();
+                            movement.y += (player.rotation + std::f32::consts::PI / 2.0).sin();
                     } else {
                         movement.y += 1.0;
                     }
