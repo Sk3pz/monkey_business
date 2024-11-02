@@ -62,7 +62,7 @@ async fn main() {
         } else {
             0.0
         };
-        //println!("FPS: {}", fps);
+        println!("FPS: {}", fps);
 
         // clear the background and give a default color
         clear_background(Color::from_rgba(222, 192, 138, 255));
@@ -85,7 +85,6 @@ async fn main() {
         let mut movement = vec2(0.0, 0.0);
         if MOVEMENT_RELATIVE_TO_MOUSE && MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED {
             if !player.is_on_mouse() && !control_handler.is_action_pressed(Action::MoveDown) {
-                println!("Player Position: {}x | {}y | {}deg", player.pos.x, player.pos.y, player.rotation.to_degrees());
                 movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
                 movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
             }
