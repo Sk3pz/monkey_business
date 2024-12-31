@@ -1,11 +1,8 @@
 
 use std::time::Instant;
-use gamestate::pause::PauseGS;
 use gamestate::GameState;
 use macroquad::audio::{load_sound, play_sound, PlaySoundParams};
 use macroquad::prelude::*;
-
-use crate::controls::{Action, ControlHandler};
 
 /***
  # SAVED RESOURCES:
