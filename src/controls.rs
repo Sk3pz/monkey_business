@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
-use macroquad::input::{is_key_down, KeyCode};
+use macroquad::input::{is_key_down, is_key_released, KeyCode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -76,6 +76,7 @@ impl ControlHandler {
         for (action, keys) in &self.bindings {
             let mut is_pressed = true;
             for key in keys {
+                // if any of the keys are not pressed in a keybind (macro), then set pressed to false
                 if !is_key_down(u16_to_keycode(*key)) {
                     is_pressed = false;
                 }
@@ -90,7 +91,26 @@ impl ControlHandler {
 
         pressed
     }
-    
+
+    pub fn get_keys_up(&self) -> Vec<Action> {
+        let mut released = Vec::new();
+
+        for (action, keys) in &self.bindings {
+            let mut is_released = true;
+            for key in keys {
+                if !is_key_released(u16_to_keycode(*key)) {
+                    is_released = false;
+                }
+            }
+            
+            if is_released {
+                released.push(action.clone());
+            }
+        }
+
+        released
+    }
+
     pub fn is_action_pressed(&self, action: Action) -> bool {
         self.get_keys_down().contains(&action)
     }

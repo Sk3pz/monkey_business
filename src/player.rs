@@ -7,6 +7,7 @@ use macroquad::window::{screen_height, screen_width};
 pub const PLAYER_SPEED: f32 = 5.0;
 const PLAYER_SCALE: (f32, f32) = (32.0, 32.0);
 
+#[derive(Clone)]
 pub struct Player {
     pub pos: Vec2,
     pub sprite: Texture2D,

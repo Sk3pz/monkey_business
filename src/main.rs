@@ -1,4 +1,7 @@
+
 use std::time::Instant;
+use gamestate::pause::PauseGS;
+use gamestate::GameState;
 use macroquad::audio::{load_sound, play_sound, PlaySoundParams};
 use macroquad::prelude::*;
 
@@ -21,6 +24,7 @@ use crate::controls::{Action, ControlHandler};
 mod player;
 mod controls;
 mod networking;
+mod gamestate;
 
 // if true, controls will be relative to mouse direction rather than up / down / left / right
 const MOVEMENT_RELATIVE_TO_MOUSE: bool = false;
@@ -36,20 +40,15 @@ async fn main() {
     let Ok(music) = load_sound("assets/audio/music/Ghouls.wav").await else {
         return eprintln!("Failed to load sound");
     };
-    
-    // get the control mapping
-    let control_handler = ControlHandler::load();
-    
-    // create the player
-    let mut player = {
-        let res = player::Player::new().await;
-        if let Err(e) = res {
-            return eprintln!("Failed to initialize player: {}", e);
-        }
-        res.unwrap()
-    };
 
+    // create a dynamic gamestate object
+    let gamestate = gamestate::playing::PlayingGS::new().await;
+    if let Err(e) = gamestate {
+        return eprintln!("Failed to initialize gamestate: {}", e);
+    }
+    let mut gamestate: Box<dyn GameState> = gamestate.unwrap();
 
+    // handle FPS calculations
     let mut last_time = Instant::now();
     let mut fps_values = vec![0.0; FPS_SMOOTHING_FRAMES];
     let mut fps_index = 0;
@@ -84,57 +83,25 @@ async fn main() {
         // Calculate the averaged FPS
         let smoothed_fps = fps_sum / FPS_SMOOTHING_FRAMES as f32;
 
-        // clear the background and give a default color
-        clear_background(Color::from_rgba(222, 192, 138, 255));
-
-        // draw the FPS counter in the top right
-        draw_text(&format!("FPS: {}", smoothed_fps.round()), 2.0, 12.0, 20.0, BLACK);
-
-        // draw the player texture
-        draw_texture_ex(
-            &player.sprite,
-            player.pos.x, player.pos.y,
-            WHITE,
-            DrawTextureParams {
-                rotation: player.rotation,
-                ..Default::default()
-            }
-        );
-
-        // handle input
-        player.look_towards_mouse();
-
-        let actions = control_handler.get_keys_down();
-        let mut movement = vec2(0.0, 0.0);
-        if MOVEMENT_RELATIVE_TO_MOUSE && MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED {
-            if !player.is_on_mouse() && !control_handler.is_action_pressed(Action::MoveDown) {
-                movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
-                movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
-            }
+        // call the gamestate's update function
+        let update_result = gamestate.update(&delta_time);
+        if let Err(update_error) = update_result {
+            // todo: maybe don't always crash if there's an error here?
+            return eprintln!("Failed to update gamestate: {}", update_error);
         }
-        for action in actions {
-            match action {
-                // todo: add limits like obstacles
-                Action::MoveUp => {
-                    // movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
-                    // movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
-                    movement.y -= 1.0;
-                }
-                Action::MoveDown => {
-                    movement.y += 1.0;
-                }
-                Action::MoveLeft => {
-                    movement.x -= 1.0;
-                }
-                Action::MoveRight => {
-                    movement.x += 1.0;
-                }
-                Action::Pause => {
-                    todo!()
-                }
+        let gamestate_action = update_result.unwrap();
+        match gamestate_action {
+            gamestate::GameStateAction::ChangeState(new_state) => {
+                gamestate = new_state;
             }
+            gamestate::GameStateAction::NoOp => {}
         }
-        player.apply_movement(movement, delta_time.as_millis());
+
+        // call the gamestate's draw funtion
+        if let Err(draw_error) = gamestate.draw(smoothed_fps) {
+            // todo: maybe don't always crash here?
+            return eprintln!("Failed to draw gamestate: {}", draw_error);
+        }
 
         // todo: use std::thread::sleep and delta_time to cap framerate if needed
         
