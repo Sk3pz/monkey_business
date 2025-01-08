@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use macroquad::{color::BLUE, window::clear_background};
+use macroquad::{color::{Color, BLUE}, shapes::draw_rectangle, window::{clear_background, screen_height, screen_width}};
 
 use crate::controls::ControlHandler;
 
@@ -36,8 +36,15 @@ impl GameState for PauseGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn draw(&self, _fps: f32) -> Result<(), GameStateError> {
+    fn draw(&self, fps: f32) -> Result<(), GameStateError> {
         clear_background(BLUE);
+
+        // draw the player in the correct position
+        self.previous_play_state.draw(fps)?;
+
+        // draw a semi-transparent overlay
+        draw_rectangle(0.0, 0.0, screen_width(), screen_height(), Color::new(0.0, 0.0, 0.0, 0.5));
+
         Ok(())
     }
     
