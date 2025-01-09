@@ -23,11 +23,6 @@ mod controls;
 mod networking;
 mod gamestate;
 
-// if true, controls will be relative to mouse direction rather than up / down / left / right
-const MOVEMENT_RELATIVE_TO_MOUSE: bool = false;
-// if true, player will always move towards the mouse
-const MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED: bool = false;
-
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
 #[macroquad::main("Monkey Business")]

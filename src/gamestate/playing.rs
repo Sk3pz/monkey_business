@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
 
-use crate::{controls::{Action, ControlHandler}, player, MOVEMENT_RELATIVE_TO_MOUSE, MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED};
+use crate::{controls::{Action, ControlHandler}, player, MOVEMENT_RELATIVE_TO_MOUSE};
 
 use super::{GameState, GameStateAction, GameStateError};
 
@@ -44,18 +44,10 @@ impl GameState for PlayingGS {
         let actions = self.control_handler.get_keys_down();
         let mut movement = vec2(0.0, 0.0);
         // handle various movement types
-        if MOVEMENT_RELATIVE_TO_MOUSE && MOVEMENT_RELATIVE_TO_MOUSE_MODIFIED {
-            if !self.player.is_on_mouse() && !self.control_handler.is_action_pressed(Action::MoveDown) {
-                movement.x += (self.player.rotation - std::f32::consts::PI / 2.0).cos();
-                movement.y += (self.player.rotation - std::f32::consts::PI / 2.0).sin();
-            }
-        }
         for action in actions {
             match action {
                 // todo: add limits like obstacles
                 Action::MoveUp => {
-                    // movement.x += (player.rotation - std::f32::consts::PI / 2.0).cos();
-                    // movement.y += (player.rotation - std::f32::consts::PI / 2.0).sin();
                     movement.y -= 1.0;
                 }
                 Action::MoveDown => {

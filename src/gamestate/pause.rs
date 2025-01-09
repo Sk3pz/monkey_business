@@ -40,6 +40,7 @@ impl GameState for PauseGS {
         clear_background(BLUE);
 
         // draw the player in the correct position
+        // todo: this will not show updates to other players surrounding the player when networking is implemented, the update function may need to be called with a special pause flag?
         self.previous_play_state.draw(fps)?;
 
         // draw a semi-transparent overlay
