@@ -17,7 +17,6 @@ use macroquad::prelude::*;
    https://crates.io/crates/ggrs
  ***/
 
-
 mod player;
 mod controls;
 mod networking;

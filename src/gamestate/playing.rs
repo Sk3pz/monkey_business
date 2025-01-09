@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
 
-use crate::{controls::{Action, ControlHandler}, player, MOVEMENT_RELATIVE_TO_MOUSE};
+use crate::{controls::{Action, ControlHandler}, player};
 
 use super::{GameState, GameStateAction, GameStateError};
 
