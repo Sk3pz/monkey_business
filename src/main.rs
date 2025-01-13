@@ -15,7 +15,9 @@ use macroquad::prelude::*;
 
    NETWORKING:
    https://crates.io/crates/ggrs
- ***/
+***/
+
+pub mod assets;
 
 mod player;
 mod controls;
@@ -88,13 +90,12 @@ async fn main() {
             gamestate::GameStateAction::NoOp => {}
         }
 
+        // draw should be delayed relative to self not to the game loop because update ticks are different from frames
         // call the gamestate's draw funtion
         if let Err(draw_error) = gamestate.draw(smoothed_fps) {
             // todo: maybe don't always crash here?
             return eprintln!("Failed to draw gamestate: {}", draw_error);
         }
-
-        // todo: use std::thread::sleep and delta_time to cap framerate if needed
         
         // call the next frame
         next_frame().await

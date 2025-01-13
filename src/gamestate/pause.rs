@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use macroquad::{color::{Color, BLUE}, shapes::draw_rectangle, window::{clear_background, screen_height, screen_width}};
+use macroquad::{color::Color, shapes::draw_rectangle, window::{screen_height, screen_width}};
 
 use crate::controls::ControlHandler;
 
@@ -37,8 +37,6 @@ impl GameState for PauseGS {
     }
 
     fn draw(&self, fps: f32) -> Result<(), GameStateError> {
-        clear_background(BLUE);
-
         // draw the player in the correct position
         // todo: this will not show updates to other players surrounding the player when networking is implemented, the update function may need to be called with a special pause flag?
         self.previous_play_state.draw(fps)?;
