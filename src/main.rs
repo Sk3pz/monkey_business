@@ -24,7 +24,16 @@ mod gamestate;
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
-#[macroquad::main("Monkey Business")]
+fn window_config() -> Conf {
+    Conf {
+        window_title: "Monkey Business".to_string(),
+        window_width: 800,
+        window_height: 600,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_config)]
 async fn main() {
 
     // todo: move this to its own music handler
