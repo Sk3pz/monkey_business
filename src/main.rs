@@ -17,8 +17,6 @@ use macroquad::prelude::*;
    https://crates.io/crates/ggrs
 ***/
 
-pub mod assets;
-
 mod player;
 mod controls;
 mod networking;
@@ -61,20 +59,22 @@ async fn main() {
         let delta_seconds = delta_time.as_secs_f32();
         // Use delta_seconds for movement, animation, etc.
 
-        // FPS calculations
-        let fps = if delta_seconds > 0.0 {
-            1.0 / delta_seconds
-        } else {
-            0.0
-        };
-        // Update the moving average
-        fps_sum -= fps_values[fps_index];
-        fps_values[fps_index] = fps;
-        fps_sum += fps;
-        fps_index = (fps_index + 1) % FPS_SMOOTHING_FRAMES;
-
         // Calculate the averaged FPS
-        let smoothed_fps = fps_sum / FPS_SMOOTHING_FRAMES as f32;
+        let smoothed_fps = {
+            // FPS calculations
+            let fps = if delta_seconds > 0.0 {
+                1.0 / delta_seconds
+            } else {
+                0.0
+            };
+            // Update the moving average
+            fps_sum -= fps_values[fps_index];
+            fps_values[fps_index] = fps;
+            fps_sum += fps;
+            fps_index = (fps_index + 1) % FPS_SMOOTHING_FRAMES;
+
+            fps_sum / FPS_SMOOTHING_FRAMES as f32
+        };
 
         // call the gamestate's update function
         let update_result = gamestate.update(&delta_time);
