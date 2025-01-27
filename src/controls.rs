@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
-use macroquad::input::{is_key_down, is_key_released, KeyCode};
+use macroquad::input::{is_key_down, is_key_released, is_mouse_button_down, is_mouse_button_released, KeyCode, MouseButton};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -13,9 +13,24 @@ pub enum Action {
     Pause,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+pub enum Binding {
+    Key(u16),
+    Mouse(u16),
+}
+
+impl Into<u16> for Binding {
+    fn into(self) -> u16 {
+        match self {
+            Binding::Key(k) => k,
+            Binding::Mouse(m) => m,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ControlHandler {
-    bindings: HashMap<Action, Vec<u16>>,
+    bindings: HashMap<Action, Vec<Binding>>,
 }
 
 impl ControlHandler {
@@ -70,15 +85,25 @@ impl ControlHandler {
         std::fs::write(path, serialized).unwrap();
     }
     
-    pub fn get_keys_down(&self) -> Vec<Action> {
+    pub fn get_actions_down(&self) -> Vec<Action> {
         let mut pressed = Vec::new();
         
         for (action, keys) in &self.bindings {
             let mut is_pressed = true;
-            for key in keys {
-                // if any of the keys are not pressed in a keybind (macro), then set pressed to false
-                if !is_key_down(u16_to_keycode(*key)) {
-                    is_pressed = false;
+            for bind in keys {
+                match bind {
+                    Binding::Key(key) => {
+                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
+                        if !is_key_down(u16_to_keycode(*key)) {
+                            is_pressed = false;
+                        }
+                    }
+                    Binding::Mouse(mb) => {
+                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
+                        if !is_mouse_button_down(u16_to_mousecode(*mb)) {
+                            is_pressed = false;
+                        }
+                    }
                 }
             }
             
@@ -92,14 +117,25 @@ impl ControlHandler {
         pressed
     }
 
-    pub fn get_keys_up(&self) -> Vec<Action> {
+    pub fn get_actions_up(&self) -> Vec<Action> {
         let mut released = Vec::new();
 
         for (action, keys) in &self.bindings {
             let mut is_released = true;
-            for key in keys {
-                if !is_key_released(u16_to_keycode(*key)) {
-                    is_released = false;
+            for bind in keys {
+                match bind {
+                    Binding::Key(key) => {
+                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
+                        if !is_key_released(u16_to_keycode(*key)) {
+                            is_released = false;
+                        }
+                    }
+                    Binding::Mouse(mb) => {
+                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
+                        if !is_mouse_button_released(u16_to_mousecode(*mb)) {
+                            is_released = false;
+                        }
+                    }
                 }
             }
             
@@ -112,11 +148,11 @@ impl ControlHandler {
     }
 
     pub fn is_action_pressed(&self, action: Action) -> bool {
-        self.get_keys_down().contains(&action)
+        self.get_actions_down().contains(&action)
     }
     
-    pub fn edit_keybind(&mut self, action: Action, new_key: Vec<KeyCode>) {
-        self.bindings.insert(action, new_key.iter().map(|k| *k as u16).collect());
+    pub fn edit_keybind(&mut self, action: Action, new_key: Vec<Binding>) {
+        self.bindings.insert(action, new_key.iter().map(|k| *k).collect());
         
         self.save();
     }
@@ -126,12 +162,12 @@ impl Default for ControlHandler {
     fn default() -> Self {
         let mut bindings = HashMap::new();
         
-        bindings.insert(Action::MoveUp, vec!(KeyCode::W as u16));
-        bindings.insert(Action::MoveDown, vec!(KeyCode::S as u16));
-        bindings.insert(Action::MoveLeft, vec!(KeyCode::A as u16));
-        bindings.insert(Action::MoveRight, vec!(KeyCode::D as u16));
+        bindings.insert(Action::MoveUp, vec!(Binding::Key(KeyCode::W as u16)));
+        bindings.insert(Action::MoveLeft, vec!(Binding::Key(KeyCode::A as u16)));
+        bindings.insert(Action::MoveDown, vec!(Binding::Key(KeyCode::S as u16)));
+        bindings.insert(Action::MoveRight, vec!(Binding::Key(KeyCode::D as u16)));
         
-        bindings.insert(Action::Pause, vec!(KeyCode::Escape as u16));
+        bindings.insert(Action::Pause, vec!(Binding::Key(KeyCode::Escape as u16)));
         
         Self {
             bindings,
@@ -262,5 +298,14 @@ pub fn u16_to_keycode(key: u16) -> KeyCode {
         0xffec => KeyCode::RightSuper,
         0xff67 => KeyCode::Menu,
         _ => KeyCode::Unknown,
+    }
+}
+
+pub fn u16_to_mousecode(key: u16) -> MouseButton {
+    match key {
+        0 => MouseButton::Left,
+        1 => MouseButton::Middle,
+        2 => MouseButton::Right,
+        _ => MouseButton::Unknown,
     }
 }

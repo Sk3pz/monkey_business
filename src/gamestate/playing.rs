@@ -41,7 +41,7 @@ impl GameState for PlayingGS {
         self.player.look_towards_mouse();
 
         // handle input and make the player respond accordingly
-        let actions = self.control_handler.get_keys_down();
+        let actions = self.control_handler.get_actions_down();
         let mut movement = vec2(0.0, 0.0);
         // handle various movement types
         for action in actions {
@@ -65,7 +65,7 @@ impl GameState for PlayingGS {
         self.player.apply_movement(movement, delta_time.as_millis());
 
         // handle the pause key with a key release to prevent spamming
-        let actions = self.control_handler.get_keys_up();
+        let actions = self.control_handler.get_actions_up();
         for action in actions {
             match action {
                 Action::Pause => {

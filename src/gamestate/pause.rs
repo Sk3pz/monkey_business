@@ -23,7 +23,7 @@ impl GameState for PauseGS {
     fn update(&mut self, _delta_time: &Duration) -> Result<GameStateAction, GameStateError> {
         let control_handler = ControlHandler::load();
         // handle on release to ensure pause key isnt spammed when held (was an issue)
-        let actions = control_handler.get_keys_up();
+        let actions = control_handler.get_actions_up();
         for action in actions {
             match action {
                 crate::controls::Action::Pause => {
