@@ -130,8 +130,8 @@ impl GameState for PlayingGS {
 
         // draw the player
         if self.debug {
-            draw_text(&format!("Player Pos: {}", self.player.pos), 2.0, 18.0, 20.0, BLACK);
-            draw_text(&format!("Player Rot: {}", self.player.rotation), 2.0, 24.0, 20.0, BLACK);
+            draw_text(&format!("Player Pos: {}", self.player.pos), 2.0, 28.0, 20.0, BLACK);
+            draw_text(&format!("Player Rot: {}", self.player.rotation), 2.0, 44.0, 20.0, BLACK);
         }
         draw_texture_ex(
             &self.player.sprite, 
