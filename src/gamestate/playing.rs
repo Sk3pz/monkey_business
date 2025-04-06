@@ -1,15 +1,17 @@
 use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
-
+use macroquad::prelude::load_texture;
 use crate::{controls::ControlHandler, debug, player};
 use crate::controls::Action;
+use crate::world::interactable::Interactable;
 use super::{GameState, GameStateAction, GameStateError};
 
 #[derive(Clone)]
 pub struct PlayingGS {
     player: player::Player,
     control_handler: ControlHandler,
+    interactables: Vec<Interactable>,
 }
 
 impl PlayingGS {
@@ -26,9 +28,33 @@ impl PlayingGS {
         }
         let control_handler = control_handler.unwrap();
 
+        let mut interactables = Vec::new();
+
+        // == rock test ==
+
+        // rock texture
+        let rock = load_texture("assets/sprites/monke.png").await;
+        if let Err(e) = player {
+            return Err(GameStateError::InitializationError(format!("Failed to load texture files: {}", e)));
+        }
+        let rock = rock.unwrap();
+
+        interactables.push(Interactable::new(
+            "rock test".to_string(),
+            vec2(100.0, 100.0),
+            rock,
+            0.0,
+            (|player: &mut player::Player| {
+                debug!("Interacted with rock!");
+                player.pos.x += 10.0;
+                GameStateAction::NoOp
+            }).into()
+        ));
+
         Ok(Box::new(Self {
             player,
             control_handler,
+            interactables,
         }))
     }
 
@@ -93,7 +119,7 @@ impl GameState for PlayingGS {
 
     fn draw(&self, fps: f32) -> Result<(), GameStateError> {
         // clear the background and give a default color
-        clear_background(Color::from_rgba(222, 192, 138, 255));
+        clear_background(Color::from_hex(0xf2b888));
         // draw the FPS counter in the top right
         draw_text(&format!("FPS: {}", fps.round()), 2.0, 12.0, 20.0, BLACK);
 

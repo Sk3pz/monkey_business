@@ -1,5 +1,3 @@
-#![feature(lock_value_accessors)]
-
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
@@ -25,6 +23,7 @@ mod controls;
 mod networking;
 mod gamestate;
 mod logging;
+mod world;
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
@@ -48,7 +47,7 @@ async fn main() {
     };
 
     // create a dynamic gamestate object
-    let gamestate = gamestate::playing::PlayingGS::new().await;
+    let gamestate = gamestate::playing::PlayingGS::new();
     if let Err(e) = gamestate {
         return error!("{}", e);
     }
