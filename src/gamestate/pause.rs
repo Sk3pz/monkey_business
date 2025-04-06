@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use macroquad::{color::Color, shapes::draw_rectangle, window::{screen_height, screen_width}};
 
-use crate::controls::ControlHandler;
-
+use crate::controls::{Action, ControlHandler};
+use crate::debug;
 use super::{playing::PlayingGS, GameState, GameStateAction, GameStateError};
 
 pub struct PauseGS {
@@ -22,15 +22,24 @@ impl GameState for PauseGS {
 
     fn update(&mut self, _delta_time: &Duration) -> Result<GameStateAction, GameStateError> {
         let control_handler = ControlHandler::load();
-        // handle on release to ensure pause key isnt spammed when held (was an issue)
-        let actions = control_handler.get_actions_up();
+        if let Err(e) = control_handler {
+            return Err(GameStateError::RuntimeError(e));
+        }
+        let control_handler = control_handler.unwrap();
+        // handle on release to ensure pause key isn't spammed when held (was an issue)
+        let actions = control_handler.get_actions();
         for action in actions {
             match action {
-                crate::controls::Action::Pause => {
-                    self.previous_play_state.reload_controls();
+                Action::Pause => {
+                    if let Err(e) = self.previous_play_state.reload_controls() {
+                        return Err(e);
+                    }
                     return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
                 }
-                _ => {}
+                _ => {
+                    // do nothing
+                    debug!("PauseGS: ignoring action {:?}", action);
+                }
             }
         }
         Ok(GameStateAction::NoOp)

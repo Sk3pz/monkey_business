@@ -1,5 +1,8 @@
+#![feature(lock_value_accessors)]
 
-use std::time::Instant;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::AtomicBool;
+use std::time::{Duration, Instant};
 use gamestate::GameState;
 use macroquad::audio::{load_sound, play_sound, PlaySoundParams};
 use macroquad::prelude::*;
@@ -21,8 +24,11 @@ mod player;
 mod controls;
 mod networking;
 mod gamestate;
+mod logging;
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
+
+const DEBUG_OUTPUT: bool = cfg!(debug_assertions);
 
 fn window_config() -> Conf {
     Conf {
@@ -38,13 +44,13 @@ async fn main() {
 
     // todo: move this to its own music handler
     let Ok(music) = load_sound("assets/audio/music/Ghouls.wav").await else {
-        return eprintln!("Failed to load sound");
+        return error!("Failed to load sound");
     };
 
     // create a dynamic gamestate object
     let gamestate = gamestate::playing::PlayingGS::new().await;
     if let Err(e) = gamestate {
-        return eprintln!("Failed to initialize gamestate: {}", e);
+        return error!("{}", e);
     }
     let mut gamestate: Box<dyn GameState> = gamestate.unwrap();
 
@@ -58,7 +64,8 @@ async fn main() {
     //     looped: true,
     //     volume: 0.1,
     // });
-    
+
+    // render loop
     loop {
         // Calculate delta time
         let now = Instant::now();
@@ -85,28 +92,29 @@ async fn main() {
             fps_sum / FPS_SMOOTHING_FRAMES as f32
         };
 
+        // == UPDATE ==
+
         // call the gamestate's update function
         let update_result = gamestate.update(&delta_time);
         if let Err(update_error) = update_result {
             // todo: maybe don't always crash if there's an error here?
-            return eprintln!("Failed to update gamestate: {}", update_error);
+            return error!("Failed to update gamestate: {}", update_error);
         }
         let gamestate_action = update_result.unwrap();
         match gamestate_action {
             gamestate::GameStateAction::ChangeState(new_state) => {
                 gamestate = new_state;
             }
-            gamestate::GameStateAction::NoOp => {}
+            gamestate::GameStateAction::NoOp => { /* do nothing */ }
         }
 
-        // draw should be delayed relative to self not to the game loop because update ticks are different from frames
-        // call the gamestate's draw funtion
+        // == RENDER ==
+
+        // call the gamestate's draw function
         if let Err(draw_error) = gamestate.draw(smoothed_fps) {
             // todo: maybe don't always crash here?
-            return eprintln!("Failed to draw gamestate: {}", draw_error);
+            return error!("Failed to draw gamestate: {}", draw_error);
         }
-        
-        // call the next frame
         next_frame().await
     }
 }

@@ -8,7 +8,8 @@ macroquad-tiled = "0.2.1"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 include_assets = "*"
+better_term = "*"
 
 [dependencies.macroquad]
-version = "0.4.13"
+version = "0.4.14"
 features = ["audio", "default"]

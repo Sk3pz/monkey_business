@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
 
-use crate::{controls::{Action, ControlHandler}, player};
-
+use crate::{controls::ControlHandler, debug, player};
+use crate::controls::Action;
 use super::{GameState, GameStateAction, GameStateError};
 
 #[derive(Clone)]
@@ -21,6 +21,10 @@ impl PlayingGS {
         let player = player.unwrap();
 
         let control_handler = ControlHandler::load();
+        if let Err(e) = control_handler {
+            return Err(GameStateError::InitializationError(format!("{}", e)));
+        }
+        let control_handler = control_handler.unwrap();
 
         Ok(Box::new(Self {
             player,
@@ -28,8 +32,14 @@ impl PlayingGS {
         }))
     }
 
-    pub fn reload_controls(&mut self) {
-        self.control_handler = ControlHandler::load();
+    pub fn reload_controls(&mut self) -> Result<(), GameStateError> {
+        let new_ct_handler = ControlHandler::load();
+        if let Err(e) = new_ct_handler {
+            return Err(GameStateError::InitializationError(format!("{}", e)));
+        }
+        let new_ct_handler = new_ct_handler.unwrap();
+        self.control_handler = new_ct_handler;
+        Ok(())
     }
 }
 
@@ -41,7 +51,7 @@ impl GameState for PlayingGS {
         self.player.look_towards_mouse();
 
         // handle input and make the player respond accordingly
-        let actions = self.control_handler.get_actions_down();
+        let actions = self.control_handler.get_actions();
         let mut movement = vec2(0.0, 0.0);
         // handle various movement types
         for action in actions {
@@ -59,21 +69,24 @@ impl GameState for PlayingGS {
                 Action::MoveRight => {
                     movement.x += 1.0;
                 }
-                _ => {}
-            }
-        }
-        self.player.apply_movement(movement, delta_time.as_millis());
+                Action::Interact => {
 
-        // handle the pause key with a key release to prevent spamming
-        let actions = self.control_handler.get_actions_up();
-        for action in actions {
-            match action {
+                }
+                Action::Inventory => {
+                    // todo: add an inventory system and open it here
+                    debug!("Opened inventory!");
+                }
+                Action::BasicAttack => {
+                    // todo: add attacks
+                    debug!("Attacked!");
+                }
                 Action::Pause => {
                     return Ok(GameStateAction::ChangeState(Box::new(super::pause::PauseGS::new(self.clone()))))
                 }
-                _ => {}
+                _ => { /* Other actions are not used here */ }
             }
         }
+        self.player.apply_movement(movement, delta_time.as_millis());
 
         Ok(GameStateAction::NoOp)
     }

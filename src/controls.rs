@@ -5,35 +5,83 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub enum Action {
+    // movement
     MoveUp,
     MoveDown,
     MoveLeft,
     MoveRight,
-    
+    Sprint,
+
+    // interaction
+    Interact,
+    Inventory,
     Pause,
+
+    // combat
+    BasicAttack,
+
+    // UI
+    UIClick, // pressing a button
+    UIRightClick, // right-click on a button
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+pub enum ExpectedPressType {
+    /*
+    Press - When the button is pressed down
+    If the button is pressed down, will continue to be fired until it is released
+    */
+    Press,
+
+    /*
+    Release - When the button is released
+    This will fire one time when the button is released, and will not fire again until after it is pressed down again
+    */
+    Release,
+
+    // /*
+    // PressCapture - When the button is pressed down, fired once
+    // This will fire one time when the button is pressed down, and will not fire again until after it is released
+    // Can be used for things like the pause menu where the same key triggers open / close
+    // */
+    // PressCapture,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
-pub enum Binding {
+pub enum BindingType {
     Key(u16),
     Mouse(u16),
 }
 
-impl Into<u16> for Binding {
+impl Into<u16> for BindingType {
     fn into(self) -> u16 {
         match self {
-            Binding::Key(k) => k,
-            Binding::Mouse(m) => m,
+            BindingType::Key(k) => k,
+            BindingType::Mouse(m) => m,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+pub struct Binding {
+    pub binding: Vec<(BindingType, ExpectedPressType)>,
+}
+
+impl Binding {
+    pub fn new(binding: Vec<(BindingType, ExpectedPressType)>) -> Self {
+        Self {
+            binding,
         }
     }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ControlHandler {
-    bindings: HashMap<Action, Vec<Binding>>,
+    bindings: HashMap<Action, Binding>,
 }
 
 impl ControlHandler {
+    /// Create the default control mapping file if it doesn't exist
     fn create_default_control_mapping() -> Result<(), String> {
         let raw_path = "./data/controls.dat".to_string();
         let path = Path::new(&raw_path);
@@ -50,28 +98,40 @@ impl ControlHandler {
         }
         
         // serialize default values
-        let deflt = ControlHandler::default();
-        let serialized = serde_json::to_string(&deflt).unwrap();
+        let defaults = ControlHandler::default();
+        let Ok(serialized) = serde_json::to_string(&defaults) else {
+            return Err(format!("Failed to create default control mapping. Delete {} to regenerate.", path.display()));
+        };
         
         // write the defaults to the file
-        std::fs::write(path, serialized).unwrap();
+        if let Err(e) = std::fs::write(path, serialized) {
+            return Err(format!("Failed to write default control mapping to file: {}", e));
+        }
         
         Ok(())
     }
-    
-    pub fn load() -> Self {
+
+    /// Load the control mapping from the file, creating it if it doesn't exist
+    pub fn load() -> Result<Self, String> {
         let raw_path = "./data/controls.dat".to_string();
         let path = Path::new(&raw_path);
         
         if !path.exists() {
-            Self::create_default_control_mapping().unwrap();
+            Self::create_default_control_mapping()?;
         }
         
         let contents = std::fs::read_to_string(path).unwrap();
-        
-        serde_json::from_str(&contents).unwrap()
+
+        let res = serde_json::from_str(&contents);
+
+        if let Err(e) = res {
+            return Err(format!("Failed to load control mapping: `{}`. If this error persists, delete {}", e, path.display()));
+        }
+
+        Ok(res.unwrap())
     }
-    
+
+    /// Save the control mapping to the file
     pub fn save(&self) {
         let raw_path = "./data/controls.dat".to_string();
         let path = Path::new(&raw_path);
@@ -84,75 +144,56 @@ impl ControlHandler {
         
         std::fs::write(path, serialized).unwrap();
     }
-    
-    pub fn get_actions_down(&self) -> Vec<Action> {
-        let mut pressed = Vec::new();
-        
-        for (action, keys) in &self.bindings {
-            let mut is_pressed = true;
-            for bind in keys {
-                match bind {
-                    Binding::Key(key) => {
-                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
-                        if !is_key_down(u16_to_keycode(*key)) {
-                            is_pressed = false;
-                        }
-                    }
-                    Binding::Mouse(mb) => {
-                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
-                        if !is_mouse_button_down(u16_to_mousecode(*mb)) {
-                            is_pressed = false;
-                        }
-                    }
-                }
-            }
-            
-            if is_pressed {
-                pressed.push(action.clone());
-            }
-        }
-        
-        // todo: mouse buttons too!
 
-        pressed
-    }
+    /// Get the actions that have occurred
+    pub fn get_actions(&self) -> Vec<Action> {
+        let mut active = Vec::new();
 
-    pub fn get_actions_up(&self) -> Vec<Action> {
-        let mut released = Vec::new();
-
-        for (action, keys) in &self.bindings {
-            let mut is_released = true;
-            for bind in keys {
-                match bind {
-                    Binding::Key(key) => {
-                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
-                        if !is_key_released(u16_to_keycode(*key)) {
-                            is_released = false;
-                        }
-                    }
-                    Binding::Mouse(mb) => {
-                        // if any of the keys are not pressed in a keybind (macro), then set pressed to false
-                        if !is_mouse_button_released(u16_to_mousecode(*mb)) {
-                            is_released = false;
-                        }
-                    }
-                }
-            }
-            
-            if is_released {
-                released.push(action.clone());
+        for action in self.bindings.keys() {
+            if self.is_action_active(action) {
+                active.push(action.clone());
             }
         }
 
-        released
+        active
     }
 
-    pub fn is_action_pressed(&self, action: Action) -> bool {
-        self.get_actions_down().contains(&action)
+    pub fn is_action_active(&self, action: &Action) -> bool {
+        let mut is_active = true;
+        for (bind, ept) in &self.bindings.get(&action).unwrap().binding {
+            match ept {
+                ExpectedPressType::Press => {
+                    if !self.is_bind_pressed(bind) {
+                        is_active = false;
+                    }
+                }
+                ExpectedPressType::Release => {
+                    if !self.is_bind_released(bind) {
+                        is_active = false;
+                    }
+                }
+            }
+        }
+
+        is_active
+    }
+
+    fn is_bind_pressed(&self, bind: &BindingType) -> bool {
+        match bind {
+            BindingType::Key(key) => is_key_down(u16_to_keycode(*key)),
+            BindingType::Mouse(mb) => is_mouse_button_down(u16_to_mousecode(*mb)),
+        }
+    }
+
+    fn is_bind_released(&self, bind: &BindingType) -> bool {
+        match bind {
+            BindingType::Key(key) => is_key_released(u16_to_keycode(*key)),
+            BindingType::Mouse(mb) => is_mouse_button_released(u16_to_mousecode(*mb)),
+        }
     }
     
-    pub fn edit_keybind(&mut self, action: Action, new_key: Vec<Binding>) {
-        self.bindings.insert(action, new_key.iter().map(|k| *k).collect());
+    pub fn edit_keybind(&mut self, action: Action, new_key: Binding) {
+        self.bindings.insert(action, new_key);
         
         self.save();
     }
@@ -161,13 +202,46 @@ impl ControlHandler {
 impl Default for ControlHandler {
     fn default() -> Self {
         let mut bindings = HashMap::new();
+
+        // == Movement ==
         
-        bindings.insert(Action::MoveUp, vec!(Binding::Key(KeyCode::W as u16)));
-        bindings.insert(Action::MoveLeft, vec!(Binding::Key(KeyCode::A as u16)));
-        bindings.insert(Action::MoveDown, vec!(Binding::Key(KeyCode::S as u16)));
-        bindings.insert(Action::MoveRight, vec!(Binding::Key(KeyCode::D as u16)));
-        
-        bindings.insert(Action::Pause, vec!(Binding::Key(KeyCode::Escape as u16)));
+        bindings.insert(Action::MoveUp, Binding::new(
+            vec!((BindingType::Key(KeyCode::W as u16), ExpectedPressType::Press))));
+
+        bindings.insert(Action::MoveDown, Binding::new(
+            vec!((BindingType::Key(KeyCode::S as u16), ExpectedPressType::Press))));
+
+        bindings.insert(Action::MoveLeft, Binding::new(
+            vec!((BindingType::Key(KeyCode::A as u16), ExpectedPressType::Press))));
+
+        bindings.insert(Action::MoveRight, Binding::new(
+            vec!((BindingType::Key(KeyCode::D as u16), ExpectedPressType::Press))));
+
+        bindings.insert(Action::Sprint, Binding::new(vec!((BindingType::Key(KeyCode::LeftShift as u16),
+                                                           ExpectedPressType::Press)))); // todo: change to release for toggle sprint
+
+        // == Interaction ==
+
+        bindings.insert(Action::Interact, Binding::new(vec!((BindingType::Mouse(MouseButton::Right as u16),
+                                                             ExpectedPressType::Release))));
+
+        bindings.insert(Action::Inventory, Binding::new(vec!((BindingType::Key(KeyCode::Tab as u16),
+                                                             ExpectedPressType::Release))));
+
+        bindings.insert(Action::Pause, Binding::new(vec!((BindingType::Key(KeyCode::Escape as u16),
+                                                             ExpectedPressType::Release))));
+
+        // == UI ==
+
+        bindings.insert(Action::UIClick, Binding::new(vec!((BindingType::Mouse(MouseButton::Left as u16),
+                                                            ExpectedPressType::Release))));
+        bindings.insert(Action::UIRightClick, Binding::new(vec!((BindingType::Mouse(MouseButton::Right as u16),
+                                                            ExpectedPressType::Release))));
+
+        // == Combat ==
+
+        bindings.insert(Action::BasicAttack, Binding::new(vec!((BindingType::Mouse(MouseButton::Left as u16),
+                  ExpectedPressType::Press))));
         
         Self {
             bindings,
