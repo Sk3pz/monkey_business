@@ -18,6 +18,10 @@ use macroquad::prelude::*;
    https://crates.io/crates/ggrs
 ***/
 
+/* TODO BUGS:
+    * Fix reoccurring issue where the player randomly gains unreasonable velocity
+*/
+
 mod player;
 mod controls;
 mod networking;

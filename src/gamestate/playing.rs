@@ -33,7 +33,7 @@ impl PlayingGS {
         // == rock test ==
 
         // rock texture
-        let rock = load_texture("assets/sprites/monke.png").await;
+        let rock = load_texture("assets/sprites/example_rock.png").await;
         if let Err(e) = rock {
             return Err(GameStateError::InitializationError(format!("Failed to load texture files: {}", e)));
         }
@@ -112,7 +112,7 @@ impl GameState for PlayingGS {
                 _ => { /* Other actions are not used here */ }
             }
         }
-        self.player.apply_movement(movement, delta_time.as_millis());
+        self.player.apply_movement(movement, &self.interactables, delta_time.as_millis());
 
         Ok(GameStateAction::NoOp)
     }
@@ -133,6 +133,21 @@ impl GameState for PlayingGS {
                 ..Default::default()
             }
         );
+
+        // draw the interactables
+        for interactable in &self.interactables {
+            draw_texture_ex(
+                &interactable.sprite,
+                interactable.pos.x, interactable.pos.y,
+                WHITE,
+                DrawTextureParams {
+                    rotation: interactable.rotation,
+                    ..Default::default()
+                }
+            );
+            // draw the name of the interactable
+            draw_text(&interactable.name, interactable.pos.x - 25.0, interactable.pos.y - 10.0, 20.0, BLACK);
+        }
 
         Ok(())
     }
