@@ -34,7 +34,7 @@ impl PlayingGS {
 
         // rock texture
         let rock = load_texture("assets/sprites/monke.png").await;
-        if let Err(e) = player {
+        if let Err(e) = rock {
             return Err(GameStateError::InitializationError(format!("Failed to load texture files: {}", e)));
         }
         let rock = rock.unwrap();
@@ -44,11 +44,11 @@ impl PlayingGS {
             vec2(100.0, 100.0),
             rock,
             0.0,
-            (|player: &mut player::Player| {
+            |player: &mut player::Player| {
                 debug!("Interacted with rock!");
                 player.pos.x += 10.0;
                 GameStateAction::NoOp
-            }).into()
+            }
         ));
 
         Ok(Box::new(Self {

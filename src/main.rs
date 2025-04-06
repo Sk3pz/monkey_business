@@ -47,7 +47,7 @@ async fn main() {
     };
 
     // create a dynamic gamestate object
-    let gamestate = gamestate::playing::PlayingGS::new();
+    let gamestate = gamestate::playing::PlayingGS::new().await;
     if let Err(e) = gamestate {
         return error!("{}", e);
     }

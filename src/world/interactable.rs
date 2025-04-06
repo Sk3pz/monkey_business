@@ -3,14 +3,14 @@ use macroquad::prelude::*;
 use crate::gamestate::GameStateAction;
 use crate::player::Player;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Interactable {
     pub name: String,
     pub pos: Vec2,
     pub sprite: Texture2D,
     pub rotation: f32,
 
-    interaction: Box<dyn Fn(&mut Player) -> GameStateAction>,
+    interaction: fn(&mut Player) -> GameStateAction,
 }
 
 impl Interactable {
@@ -19,7 +19,7 @@ impl Interactable {
         pos: Vec2,
         sprite: Texture2D,
         rotation: f32,
-        interaction: Box<dyn Fn(&mut Player) -> GameStateAction>,
+        interaction: fn(&mut Player) -> GameStateAction,
     ) -> Self {
         Self {
             name,
