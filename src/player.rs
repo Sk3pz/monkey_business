@@ -36,6 +36,9 @@ impl Player {
     }
 
     pub fn apply_movement(&mut self, mut movement: Vec2, interactables: &Vec<Interactable>, delta_time: u128) {
+        if delta_time == 0 {
+            return;
+        }
         if movement.length() > 0.0 {
             movement = movement.normalize() * (PLAYER_SPEED / delta_time as f32);
         }
