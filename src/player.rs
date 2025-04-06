@@ -40,7 +40,7 @@ impl Player {
             movement = movement.normalize() * (PLAYER_SPEED / delta_time as f32);
         }
 
-        // add collisions with interactables and use padding, player can not move into interactables
+        // add collisions with interactables
         for interactable in interactables {
             let interactable_pos = vec2(interactable.pos.x + COLLISION_PADDING, interactable.pos.y + COLLISION_PADDING);
             let interactable_size = vec2(interactable.sprite.width() - COLLISION_PADDING * 2.0, interactable.sprite.height() - COLLISION_PADDING * 2.0);

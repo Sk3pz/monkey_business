@@ -12,6 +12,7 @@ pub struct PlayingGS {
     player: player::Player,
     control_handler: ControlHandler,
     interactables: Vec<Interactable>,
+    debug: bool,
 }
 
 impl PlayingGS {
@@ -55,6 +56,7 @@ impl PlayingGS {
             player,
             control_handler,
             interactables,
+            debug: false,
         }))
     }
 
@@ -106,6 +108,9 @@ impl GameState for PlayingGS {
                     // todo: add attacks
                     debug!("Attacked!");
                 }
+                Action::Debug => {
+                    self.debug = !self.debug;
+                }
                 Action::Pause => {
                     return Ok(GameStateAction::ChangeState(Box::new(super::pause::PauseGS::new(self.clone()))))
                 }
@@ -124,6 +129,10 @@ impl GameState for PlayingGS {
         draw_text(&format!("FPS: {}", fps.round()), 2.0, 12.0, 20.0, BLACK);
 
         // draw the player
+        if self.debug {
+            draw_text(&format!("Player Pos: {}", self.player.pos), 2.0, 18.0, 20.0, BLACK);
+            draw_text(&format!("Player Rot: {}", self.player.rotation), 2.0, 24.0, 20.0, BLACK);
+        }
         draw_texture_ex(
             &self.player.sprite, 
             self.player.pos.x, self.player.pos.y,  

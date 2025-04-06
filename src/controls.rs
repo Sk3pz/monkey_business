@@ -23,6 +23,9 @@ pub enum Action {
     // UI
     UIClick, // pressing a button
     UIRightClick, // right-click on a button
+
+    // MISC
+    Debug,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -242,6 +245,11 @@ impl Default for ControlHandler {
 
         bindings.insert(Action::BasicAttack, Binding::new(vec!((BindingType::Mouse(MouseButton::Left as u16),
                   ExpectedPressType::Press))));
+
+        // == Misc ==
+
+        bindings.insert(Action::Debug, Binding::new(vec!((BindingType::Key(KeyCode::GraveAccent as u16),
+                                                           ExpectedPressType::Release))));
         
         Self {
             bindings,
