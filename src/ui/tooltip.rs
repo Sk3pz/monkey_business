@@ -3,35 +3,32 @@ use macroquad::prelude::*;
 use crate::assets::GlobalAssets;
 use crate::util::{draw_ansi_text, draw_rounded_rect, remove_ansii_escape_codes};
 
+// TODO: background positions are sort of hardcoded
+
 // draw a tooltip at the mouse position
 pub fn tooltip<S: Into<String>>(text: S, global_assets: &GlobalAssets) {
     // get the mouse position
     let mouse_pos = mouse_position();
     // get the tooltip text
-    let tooltip_text = text.into();
+    let tooltip_text = format!("{}{}", better_term::Color::BrightWhite, text.into());
     // let tooltip_text = format!("{}Press {}E{}!",
     //                            better_term::Color::BrightWhite,
     //                            better_term::Color::BrightYellow,
     //                            better_term::Color::BrightWhite);
     let raw_text = remove_ansii_escape_codes(&tooltip_text);
     // get the font size
-    let font_size = 8.0;
+    let font_size = 11.0;
     // get the text size
     let text_size = measure_text(&raw_text, Some(&global_assets.font), font_size as u16, 1.0);
+    let padding = 4.0;
+    let mut max_width = text_size.width;
+    let mut total_height = text_size.height;
     // draw the tooltip background
-    // draw_rectangle_ex(mouse_pos.0 + 8.0, mouse_pos.1 - 11.0, text_size.width + 4.0, text_size.height + 5.0, DrawRectangleParams {
-    //     offset: Default::default(),
-    //     rotation: 0.0,
-    //     color: Color::from_rgba(0, 0, 0, 80),
-    // });
-    // draw_rectangle_lines_ex(mouse_pos.0 + 8.0, mouse_pos.1 - 11.0, text_size.width + 4.0, text_size.height + 5.0, 1.0, DrawRectangleParams {
-    //     offset: Default::default(),
-    //     rotation: 0.0,
-    //     color: Color::from_rgba(0, 0, 0, 255),
-    // });
+    let bg_pos = vec2(mouse_pos.0 + 6.0, mouse_pos.1 - (text_size.height) - padding);
+    let bg_size = vec2(max_width + padding * 2.0, total_height + padding * 2.0);
     draw_rounded_rect(
-        vec2(mouse_pos.0 + 8.0, mouse_pos.1 - 11.0),
-        vec2(text_size.width + 4.0, text_size.height + 4.0),
+        bg_pos,
+        bg_size,
         2.0,
         Color::from_rgba(0, 0, 0, 150),
         true,

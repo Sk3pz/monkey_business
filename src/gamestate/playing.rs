@@ -6,7 +6,7 @@ use macroquad::text::TextParams;
 use crate::{controls::ControlHandler, player};
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
-use crate::ui::tooltip::tooltip_card;
+use crate::ui::tooltip::{tooltip, tooltip_card};
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
 use crate::world::craft_example_rock;
 use crate::world::interactable::Interactable;
@@ -218,7 +218,11 @@ impl GameState for PlayingGS {
             // if the mouse is on an interactable, give a tooltip
             for interactable in &self.interactables {
                 if interactable.is_mouse_over() {
-                    tooltip_card(interactable.tooltip.clone(), assets);
+                    if interactable.distance_from_player(&self.player) <= 100.0 {
+                        tooltip_card(interactable.tooltip.clone(), assets);
+                    } else {
+                        tooltip(interactable.name.clone(), assets);
+                    }
                 }
             }
         }
