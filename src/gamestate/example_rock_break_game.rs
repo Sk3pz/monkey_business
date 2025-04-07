@@ -116,7 +116,7 @@ impl GameState for ExampleRockBreakGameGS {
                     if self.is_click_inside_rock() {
                         // increment clicks
                         self.clicks += 1;
-                        if self.clicks >= 100 {
+                        if self.clicks >= 10 {
                             self.previous_play_state.break_rock(self.rock_id)?;
                             return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
                         }
@@ -153,6 +153,9 @@ impl GameState for ExampleRockBreakGameGS {
             vec2(256.0, 256.0)
         };
 
+        // get the rock
+        let rock = self.previous_play_state.interactables.iter().find(|i| i.get_id() == self.rock_id).unwrap();
+
         // draw the rock at the center of the screen
         draw_texture_ex(
             &rock_sprite,
@@ -162,7 +165,7 @@ impl GameState for ExampleRockBreakGameGS {
             DrawTextureParams {
                 dest_size: Some(scale),
                 source: None,
-                rotation: 0.0,
+                rotation: rock.get_rotation(),
                 ..Default::default()
             }
         );
