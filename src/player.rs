@@ -4,6 +4,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::miniquad::FilterMode;
 use macroquad::prelude::{load_texture, Texture2D};
 use macroquad::window::{screen_height, screen_width};
+use crate::assets::GlobalAssets;
 use crate::debug;
 use crate::world::interactable::Interactable;
 
@@ -37,7 +38,7 @@ impl Player {
         })
     }
 
-    pub fn apply_movement(&mut self, mut movement: Vec2, interactables: &Vec<Interactable>, delta_time: u128) {
+    pub fn apply_movement(&mut self, mut movement: Vec2, interactables: &Vec<Box<dyn Interactable>>, assets: &GlobalAssets, delta_time: u128) {
         if delta_time == 0 {
             return;
         }
@@ -51,10 +52,12 @@ impl Player {
             let player_size = vec2(self.sprite.width(), self.sprite.height());
             let player_pos = vec2(self.pos.x - player_size.x / 2.0, self.pos.y - player_size.y / 2.0);
 
-            let interactable_size = vec2(interactable.sprite.width(), interactable.sprite.height());
+            let interactable_sprite = interactable.get_sprite(assets);
+            let interactable_size = vec2(interactable_sprite.width(), interactable_sprite.height());
+            let ipos = interactable.get_pos();
             let interactable_pos = vec2(
-                interactable.pos.x - interactable_size.x / 2.0,
-                interactable.pos.y - interactable_size.y / 2.0,
+                ipos.x - interactable_size.x / 2.0,
+                ipos.y - interactable_size.y / 2.0,
             );
 
             // AABB collision check

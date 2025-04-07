@@ -2,21 +2,23 @@ use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
 use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
+use macroquad::rand::gen_range;
 use macroquad::text::TextParams;
+use macroquad::window::screen_height;
 use crate::{controls::ControlHandler, player};
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
-use crate::ui::tooltip::{tooltip, tooltip_card};
+use crate::ui::tooltip::{tooltip, ToolTipCard};
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
-use crate::world::craft_example_rock;
-use crate::world::interactable::Interactable;
+use crate::world::example_rock::ExampleRock;
+use crate::world::interactable::{Interactable, InteractableAttribute};
 use super::{GameState, GameStateAction, GameStateError};
 
-#[derive(Clone)]
 pub struct PlayingGS {
     player: player::Player,
     control_handler: ControlHandler,
-    interactables: Vec<Interactable>,
+    pub interactables: Vec<Box<dyn Interactable>>,
+    pub interacting_with: Option<u32>,
     paused: bool,
     debug: bool,
 }
@@ -35,22 +37,21 @@ impl PlayingGS {
         }
         let control_handler = control_handler.unwrap();
 
-        let mut interactables = Vec::new();
+        let mut interactables: Vec<Box<dyn Interactable>> = Vec::new();
 
         // == rock test ==
 
-        let rock = craft_example_rock().await;
-        if let Err(e) = rock {
-            return Err(GameStateError::InitializationError(format!("Failed to initialize interactable: {}", e)));
-        }
-        let rock = rock.unwrap();
+        for x in 0..5 {
+            let rock = ExampleRock::new(x, format!("Rock {}", x), vec2(gen_range(0.0, screen_width()), gen_range(0.0, screen_height())), gen_range(0.0, 360.0));
 
-        interactables.push(rock);
+            interactables.push(Box::new(rock));
+        }
 
         Ok(Box::new(Self {
             player,
             control_handler,
             interactables,
+            interacting_with: None,
             paused: false,
             debug: false,
         }))
@@ -63,6 +64,25 @@ impl PlayingGS {
         }
         let new_ct_handler = new_ct_handler.unwrap();
         self.control_handler = new_ct_handler;
+        Ok(())
+    }
+
+    pub fn break_rock(&mut self, id: u32) -> Result<(), GameStateError> {
+        // find the rock with the given id
+        let mut rock = None;
+        for interactable in &mut self.interactables {
+            if interactable.get_id() == id {
+                rock = Some(interactable);
+                break;
+            }
+        }
+        if let Some(rock) = rock {
+            // remove the rock from the interactables
+            self.interactables.retain(|i| i.get_id() != id);
+            // add a new rock to the interactables
+            let new_rock = ExampleRock::new(id, format!("Rock {}", id), vec2(gen_range(0.0, screen_width()), gen_range(0.0, screen_height())), gen_range(0.0, 360.0));
+            self.interactables.push(Box::new(new_rock));
+        }
         Ok(())
     }
 }
@@ -95,10 +115,12 @@ impl GameState for PlayingGS {
                     movement.x += 1.0;
                 }
                 Action::Interact => {
-                    let clone = self.clone();
+                    let mut clone = self.clone();
                     // check if mouse is on an interactable
                     for interactable in &mut self.interactables {
-                        if interactable.is_mouse_over() && interactable.distance_from_player(&self.player) <= 100.0 {
+                        if interactable.is_mouse_over(assets) && interactable.distance_from_player(&self.player, assets) <= 100.0 {
+                            self.interacting_with = Some(interactable.get_id());
+                            clone.interacting_with = Some(interactable.get_id());
                             let previous_game_state = Some(clone);
                             return interactable.interact(assets, &mut self.player, previous_game_state);
                         }
@@ -119,7 +141,7 @@ impl GameState for PlayingGS {
                 _ => { /* Other actions are not used here */ }
             }
         }
-        self.player.apply_movement(movement, &self.interactables, delta_time.as_millis());
+        self.player.apply_movement(movement, &self.interactables, assets, delta_time.as_millis());
 
         Ok(GameStateAction::NoOp)
     }
@@ -133,6 +155,7 @@ impl GameState for PlayingGS {
         // Refresh everything that needs to be
         self.reload_controls()?;
         self.paused = false;
+        self.interacting_with = None;
         Ok(())
     }
 
@@ -161,12 +184,13 @@ impl GameState for PlayingGS {
 
         // draw the interactables
         for interactable in &self.interactables {
+            let interactable_pos = interactable.get_pos();
             draw_texture_ex(
-                &interactable.sprite,
-                interactable.pos.x, interactable.pos.y,
+                &interactable.get_sprite(assets),
+                interactable_pos.x, interactable_pos.y,
                 WHITE,
                 DrawTextureParams {
-                    rotation: interactable.rotation,
+                    rotation: interactable.get_rotation(),
                     ..Default::default()
                 }
             );
@@ -217,11 +241,26 @@ impl GameState for PlayingGS {
         if !self.paused {
             // if the mouse is on an interactable, give a tooltip
             for interactable in &self.interactables {
-                if interactable.is_mouse_over() {
-                    if interactable.distance_from_player(&self.player) <= 100.0 {
-                        tooltip_card(interactable.tooltip.clone(), assets);
+                if interactable.is_mouse_over(assets) {
+                    if interactable.distance_from_player(&self.player, assets) <= 100.0 {
+                        let interact_btn = self.control_handler.get_binding(&Action::Interact).unwrap();
+                        let clicks = match interactable.get_attribute("clicks").unwrap_or(InteractableAttribute::UInt(0)) {
+                            InteractableAttribute::UInt(i) => i,
+                            _ => 0
+                        };
+                        let card = ToolTipCard {
+                            title: interactable.get_name(),
+                            lines: vec![format!("{}Press {}{}{} to interact.", better_term::Color::White,
+                                                better_term::Color::BrightYellow, interact_btn, better_term::Color::White),
+                                        format!("{}Clicks: {}{}", better_term::Color::White, better_term::Color::BrightYellow, clicks)],
+                        };
+                        tooltip(card, assets);
                     } else {
-                        tooltip(interactable.name.clone(), assets);
+                        let card = ToolTipCard {
+                            title: interactable.get_name(),
+                            lines: vec![format!("{}Get closer to interact!", better_term::Color::White)],
+                        };
+                        tooltip(card, assets);
                     }
                 }
             }
@@ -234,4 +273,20 @@ impl GameState for PlayingGS {
         "Playing".to_string()
     }
 
+}
+
+impl Clone for PlayingGS {
+    fn clone(&self) -> Self {
+        let interactables: Vec<Box<dyn Interactable>> =
+            self.interactables.iter().map(|i| i.clone()).collect();
+
+        Self {
+            player: self.player.clone(),
+            control_handler: self.control_handler.clone(),
+            interactables,
+            interacting_with: self.interacting_with.clone(),
+            paused: self.paused,
+            debug: self.debug,
+        }
+    }
 }

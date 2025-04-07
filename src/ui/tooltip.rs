@@ -3,51 +3,6 @@ use macroquad::prelude::*;
 use crate::assets::GlobalAssets;
 use crate::util::{draw_ansi_text, draw_rounded_rect, remove_ansii_escape_codes};
 
-// TODO: background positions are sort of hardcoded
-
-// draw a tooltip at the mouse position
-pub fn tooltip<S: Into<String>>(text: S, global_assets: &GlobalAssets) {
-    // get the mouse position
-    let mouse_pos = mouse_position();
-    // get the tooltip text
-    let tooltip_text = format!("{}{}", better_term::Color::BrightWhite, text.into());
-    // let tooltip_text = format!("{}Press {}E{}!",
-    //                            better_term::Color::BrightWhite,
-    //                            better_term::Color::BrightYellow,
-    //                            better_term::Color::BrightWhite);
-    let raw_text = remove_ansii_escape_codes(&tooltip_text);
-    // get the font size
-    let font_size = 11.0;
-    // get the text size
-    let text_size = measure_text(&raw_text, Some(&global_assets.font), font_size as u16, 1.0);
-    let padding = 4.0;
-    let mut max_width = text_size.width;
-    let mut total_height = text_size.height;
-    // draw the tooltip background
-    let bg_pos = vec2(mouse_pos.0 + 6.0, mouse_pos.1 - (text_size.height) - padding);
-    let bg_size = vec2(max_width + padding * 2.0, total_height + padding * 2.0);
-    draw_rounded_rect(
-        bg_pos,
-        bg_size,
-        2.0,
-        Color::from_rgba(0, 0, 0, 150),
-        true,
-        Some(Color::from_rgba(0, 0, 0, 255)));
-
-    draw_ansi_text(&tooltip_text, vec2(mouse_pos.0 + 10.0, mouse_pos.1), &global_assets, font_size as u16, 4.0);
-
-    // draw the tooltip text
-    // draw_text_ex(&tooltip_text,
-    //           mouse_pos.0 + 10.0,
-    //           mouse_pos.1,
-    //           TextParams {
-    //                 font: Some(&global_assets.font),
-    //                 font_size: font_size as u16,
-    //                 color: WHITE,
-    //                 ..Default::default()
-    //           });
-}
-
 #[derive(Clone, Debug)]
 pub struct ToolTipCard {
     pub title: String,
@@ -71,7 +26,7 @@ impl ToolTipCard {
     }
 }
 
-pub fn tooltip_card(card: ToolTipCard, global_assets: &GlobalAssets) {
+pub fn tooltip(card: ToolTipCard, global_assets: &GlobalAssets) {
     let mouse_pos = mouse_position();
     let title_text = card.title;
     let line_texts: Vec<String> = card.lines;
@@ -88,8 +43,8 @@ pub fn tooltip_card(card: ToolTipCard, global_assets: &GlobalAssets) {
     // Measure lines
     let mut max_width = title_size.width;
     let mut total_height = title_size.height;
-
     let mut measured_lines = Vec::new();
+
     for line in &line_texts {
         let raw_line = remove_ansii_escape_codes(line);
         let size = measure_text(&raw_line, Some(&global_assets.font), line_font_size as u16, 1.0);
@@ -104,10 +59,26 @@ pub fn tooltip_card(card: ToolTipCard, global_assets: &GlobalAssets) {
         total_height += lines_height + spacing_total;
     }
 
-    // Draw background with border
-    let bg_pos = vec2(mouse_pos.0 + 12.0, mouse_pos.1 - 30.0);
+    // Calculate size and determine position (flip left if needed)
     let bg_size = vec2(max_width + padding * 2.0, total_height + padding * 2.0);
+    let mut bg_pos = vec2(mouse_pos.0 + 12.0, mouse_pos.1 - 30.0);
 
+    // Flip left if going off-screen
+    if bg_pos.x + bg_size.x > screen_width() {
+        bg_pos.x = mouse_pos.0 - bg_size.x - 12.0;
+    }
+
+    // Clamp to left edge if still going off-screen
+    if bg_pos.x < 0.0 {
+        bg_pos.x = 0.0;
+    }
+
+    // Clamp to top if going above screen
+    if bg_pos.y < 0.0 {
+        bg_pos.y = 0.0;
+    }
+
+    // Draw background with border
     draw_rounded_rect(
         bg_pos,
         bg_size,

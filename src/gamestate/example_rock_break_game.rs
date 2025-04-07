@@ -9,15 +9,18 @@ use macroquad::text::{draw_text_ex, measure_text};
 use macroquad::texture::DrawTextureParams;
 use crate::assets::GlobalAssets;
 use crate::controls::{Action, ControlHandler};
-use crate::debug;
 use crate::gamestate::playing::PlayingGS;
+use crate::world::interactable::InteractableAttribute;
 use super::{GameState, GameStateAction, GameStateError};
+
+// todo: this is just an example of the engine
 
 pub struct ExampleRockBreakGameGS {
     previous_play_state: PlayingGS,
     clicks: u32,
     control_handler: ControlHandler,
     recently_clicked: bool,
+    rock_id: u32,
 }
 
 impl ExampleRockBreakGameGS {
@@ -28,9 +31,21 @@ impl ExampleRockBreakGameGS {
         }
         let control_handler = control_handler.unwrap();
 
+        // get clicks
+        let clicks = previous_play_state.interacting_with
+            .and_then(|id| previous_play_state.interactables.iter()
+                .find(|i| i.get_id() == id)
+                .and_then(|i| i.get_attribute("clicks"))
+                .and_then(|a| match a {
+                    InteractableAttribute::UInt(c) => Some(c),
+                    _ => None,
+                }))
+            .unwrap_or(0);
+
         Ok(Box::new(Self {
+            rock_id: previous_play_state.interacting_with.unwrap_or(0),
             previous_play_state,
-            clicks: 0,
+            clicks,
             control_handler,
             recently_clicked: false,
         }))
@@ -75,6 +90,15 @@ impl GameState for ExampleRockBreakGameGS {
         for action in actions {
             match action {
                 Action::Pause => {
+                    if let Some(rock) = self.previous_play_state.interacting_with {
+                        // update the interactable with id rock_id with the clicks
+                        self.previous_play_state.interactables
+                            .iter_mut()
+                            .filter(|i| i.get_id() == rock)
+                            .for_each(|i| {
+                                i.set_attribute("clicks", InteractableAttribute::UInt(self.clicks)).unwrap();
+                            });
+                    }
                     if let Err(e) = self.previous_play_state.restore() {
                         return Err(e);
                     }
@@ -92,8 +116,9 @@ impl GameState for ExampleRockBreakGameGS {
                     if self.is_click_inside_rock() {
                         // increment clicks
                         self.clicks += 1;
-                        if self.clicks > 100 {
-                            // todo: flag the rock for destruction
+                        if self.clicks >= 100 {
+                            self.previous_play_state.break_rock(self.rock_id)?;
+                            return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
                         }
                     }
                     self.recently_clicked = false;

@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use regex::Regex;
 use crate::assets::GlobalAssets;
 
-const DEFAULT_COLOR: Color = BLACK;
+const DEFAULT_COLOR: Color = WHITE;
 
 fn generate_rounded_perimeter(pos: Vec2, size: Vec2, radius: f32, segments_per_corner: u16) -> Vec<Vec2> {
     let mut points = Vec::new();
