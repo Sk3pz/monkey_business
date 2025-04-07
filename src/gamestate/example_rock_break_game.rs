@@ -75,7 +75,7 @@ impl GameState for ExampleRockBreakGameGS {
         for action in actions {
             match action {
                 Action::Pause => {
-                    if let Err(e) = self.previous_play_state.reload_controls() {
+                    if let Err(e) = self.previous_play_state.restore() {
                         return Err(e);
                     }
                     return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
@@ -104,7 +104,12 @@ impl GameState for ExampleRockBreakGameGS {
         Ok(GameStateAction::NoOp)
     }
 
+    fn pause(&mut self) -> Result<(), GameStateError> {
+        Ok(())
+    }
+
     fn restore(&mut self) -> Result<(), GameStateError> {
+        self.previous_play_state.pause()?;
         Ok(())
     }
 
@@ -151,6 +156,10 @@ impl GameState for ExampleRockBreakGameGS {
                       });
 
         Ok(())
+    }
+
+    fn get_name(&self) -> String {
+        "ExampleRockBreakGame".to_string()
     }
 
 }

@@ -1,13 +1,12 @@
 use std::time::Duration;
 
-use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
-use macroquad::math::Vec2;
+use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
 use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
 use macroquad::text::TextParams;
-use crate::{controls::ControlHandler, debug, player, window_config};
+use crate::{controls::ControlHandler, player};
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
-use crate::ui::tooltip::{tooltip, tooltip_card};
+use crate::ui::tooltip::tooltip_card;
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
 use crate::world::craft_example_rock;
 use crate::world::interactable::Interactable;
@@ -18,6 +17,7 @@ pub struct PlayingGS {
     player: player::Player,
     control_handler: ControlHandler,
     interactables: Vec<Interactable>,
+    paused: bool,
     debug: bool,
 }
 
@@ -51,6 +51,7 @@ impl PlayingGS {
             player,
             control_handler,
             interactables,
+            paused: false,
             debug: false,
         }))
     }
@@ -97,7 +98,7 @@ impl GameState for PlayingGS {
                     let clone = self.clone();
                     // check if mouse is on an interactable
                     for interactable in &mut self.interactables {
-                        if interactable.is_mouse_over() {
+                        if interactable.is_mouse_over() && interactable.distance_from_player(&self.player) <= 100.0 {
                             let previous_game_state = Some(clone);
                             return interactable.interact(assets, &mut self.player, previous_game_state);
                         }
@@ -123,9 +124,15 @@ impl GameState for PlayingGS {
         Ok(GameStateAction::NoOp)
     }
 
+    fn pause(&mut self) -> Result<(), GameStateError> {
+        self.paused = true;
+        Ok(())
+    }
+
     fn restore(&mut self) -> Result<(), GameStateError> {
         // Refresh everything that needs to be
         self.reload_controls()?;
+        self.paused = false;
         Ok(())
     }
 
@@ -172,12 +179,12 @@ impl GameState for PlayingGS {
                 color: BLACK,
                 ..Default::default()
             });
-            // draw_text_ex(&format!("Player Rot: {}", self.player.rotation), 2.0, 44.0, TextParams {
-            //     font: Some(&global_assets.font),
-            //     font_size: 8,
-            //     color: BLACK,
-            //     ..Default::default()
-            // });
+            draw_text_ex(&format!("Paused: {}", self.paused), 2.0, 44.0, TextParams {
+                font: Some(&assets.font),
+                font_size: 8,
+                color: BLACK,
+                ..Default::default()
+            });
             let ansi_test = format!("Color Test: {}1{}2{}3{}4{}5{}6{}7{}8{}9{}0{}a{}b{}c{}d{}e{}f",
                                     better_term::Color::BrightBlue,
                                     better_term::Color::Green,
@@ -207,15 +214,20 @@ impl GameState for PlayingGS {
             );
         }
 
-        // todo: this is still showing up on the pause menu :/
-        // if the mouse is on an interactable, give a tooltip
-        for interactable in &self.interactables {
-            if interactable.is_mouse_over() {
-                tooltip_card(interactable.tooltip.clone(), assets);
+        if !self.paused {
+            // if the mouse is on an interactable, give a tooltip
+            for interactable in &self.interactables {
+                if interactable.is_mouse_over() {
+                    tooltip_card(interactable.tooltip.clone(), assets);
+                }
             }
         }
 
         Ok(())
+    }
+
+    fn get_name(&self) -> String {
+        "Playing".to_string()
     }
 
 }

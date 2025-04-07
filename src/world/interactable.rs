@@ -40,6 +40,14 @@ impl Interactable {
         (self.interaction)(assets, player, previous_game_state)
     }
 
+    pub fn distance_from_player(&self, player: &Player) -> f32 {
+        let player_pos = vec2(player.pos.x + player.sprite.width() / 2.0, player.pos.y + player.sprite.height() / 2.0);
+        let interactable_pos = vec2(self.pos.x + self.sprite.width() / 2.0, self.pos.y + self.sprite.height() / 2.0);
+        let dx = interactable_pos.x - player_pos.x;
+        let dy = interactable_pos.y - player_pos.y;
+        (dx * dx + dy * dy).sqrt()
+    }
+
     pub fn is_mouse_over(&self) -> bool {
         let mouse_pos = vec2(mouse_position().0, mouse_position().1);
         let rect = Rect::new(self.pos.x, self.pos.y, self.sprite.width(), self.sprite.height());

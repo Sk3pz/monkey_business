@@ -31,21 +31,25 @@ impl GameState for PauseGS {
         for action in actions {
             match action {
                 Action::Pause => {
-                    if let Err(e) = self.previous_play_state.restore() {
-                        return Err(e);
-                    }
+                    // if let Err(e) = self.previous_play_state.restore() {
+                    //     return Err(e);
+                    // }
                     return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
                 }
                 _ => {
                     // do nothing
-                    debug!("PauseGS: ignoring action {:?}", action);
                 }
             }
         }
         Ok(GameStateAction::NoOp)
     }
 
+    fn pause(&mut self) -> Result<(), GameStateError> {
+        Ok(())
+    }
+
     fn restore(&mut self) -> Result<(), GameStateError> {
+        self.previous_play_state.pause()?;
         Ok(())
     }
 
@@ -59,5 +63,9 @@ impl GameState for PauseGS {
 
         Ok(())
     }
-    
+
+    fn get_name(&self) -> String {
+        "Paused".to_string()
+    }
+
 }

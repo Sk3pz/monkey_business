@@ -28,7 +28,9 @@ pub enum GameStateAction {
 pub trait GameState {
 
     fn update(&mut self, delta_time: &Duration, assets: &GlobalAssets) -> Result<GameStateAction, GameStateError>;
+    fn pause(&mut self) -> Result<(), GameStateError>;
     fn restore(&mut self) -> Result<(), GameStateError>;
     fn draw(&self, assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError>;
+    fn get_name(&self) -> String;
 
 }

@@ -104,7 +104,14 @@ async fn main() {
         let gamestate_action = update_result.unwrap();
         match gamestate_action {
             gamestate::GameStateAction::ChangeState(new_state) => {
+                if let Err(e) = gamestate.pause() {
+                    error!("{}", e);
+                }
+                info!("Switching gamestate from {} to {}", gamestate.get_name(), new_state.get_name());
                 gamestate = new_state;
+                if let Err(e) = gamestate.restore() {
+                    error!("{}", e);
+                }
             }
             gamestate::GameStateAction::NoOp => { /* do nothing */ }
         }
