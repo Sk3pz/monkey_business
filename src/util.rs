@@ -3,6 +3,8 @@ use std::f32::consts::PI;
 use regex::Regex;
 use crate::assets::GlobalAssets;
 
+const DEFAULT_COLOR: Color = BLACK;
+
 fn generate_rounded_perimeter(pos: Vec2, size: Vec2, radius: f32, segments_per_corner: u16) -> Vec<Vec2> {
     let mut points = Vec::new();
     let segments = segments_per_corner.max(1);
@@ -142,7 +144,7 @@ pub fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
     let re = Regex::new(r"(\x1B\[((?:\d+;?)*?)m)").unwrap();
     let mut spans: Vec<Vec<TextSpan>> = vec![];
     let mut current_line: Vec<TextSpan> = vec![];
-    let mut current_color = WHITE;
+    let mut current_color = DEFAULT_COLOR;
 
     let mut last_end = 0;
     for cap in re.captures_iter(&input) {

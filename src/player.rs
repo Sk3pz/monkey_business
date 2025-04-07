@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 use macroquad::input::mouse_position;
 use macroquad::math::{vec2, Vec2};
+use macroquad::miniquad::FilterMode;
 use macroquad::prelude::{load_texture, Texture2D};
 use macroquad::window::{screen_height, screen_width};
 use crate::debug;
@@ -27,6 +28,7 @@ impl Player {
             return Err(format!("Failed to load texture files: {}", e));
         }
         let player = player.unwrap();
+        player.set_filter(FilterMode::Nearest);
         
         Ok(Self {
             pos: vec2(0.0, 0.0),
@@ -46,24 +48,33 @@ impl Player {
         // add collisions with interactables
         for interactable in interactables {
             // todo: comprehend
-            let interactable_pos = vec2(interactable.pos.x + COLLISION_PADDING, interactable.pos.y + COLLISION_PADDING);
-            let interactable_size = vec2(interactable.sprite.width() - COLLISION_PADDING * 2.0, interactable.sprite.height() - COLLISION_PADDING * 2.0);
+            let player_size = vec2(self.sprite.width(), self.sprite.height());
+            let player_pos = vec2(self.pos.x - player_size.x / 2.0, self.pos.y - player_size.y / 2.0);
 
-            if self.pos.x < interactable_pos.x + interactable_size.x && self.pos.x + PLAYER_SCALE.0 > interactable_pos.x &&
-                self.pos.y < interactable_pos.y + interactable_size.y && self.pos.y + PLAYER_SCALE.1 > interactable_pos.y {
-                // stop the player from moving into the interactable while allowing the player to move in all other directions
-                // Calculate penetration depths
-                let left_penetration = (self.pos.x + PLAYER_SCALE.0) - interactable_pos.x;
-                let right_penetration = (interactable_pos.x + interactable_size.x) - self.pos.x;
-                let top_penetration = (self.pos.y + PLAYER_SCALE.1) - interactable_pos.y;
-                let bottom_penetration = (interactable_pos.y + interactable_size.y) - self.pos.y;
+            let interactable_size = vec2(interactable.sprite.width(), interactable.sprite.height());
+            let interactable_pos = vec2(
+                interactable.pos.x - interactable_size.x / 2.0,
+                interactable.pos.y - interactable_size.y / 2.0,
+            );
 
-                // Find the minimum penetration direction
-                let min_penetration = left_penetration.min(right_penetration)
+            // AABB collision check
+            if player_pos.x < interactable_pos.x + interactable_size.x
+                && player_pos.x + player_size.x > interactable_pos.x
+                && player_pos.y < interactable_pos.y + interactable_size.y
+                && player_pos.y + player_size.y > interactable_pos.y
+            {
+                // Calculate overlap (penetration) in each direction
+                let left_penetration = (player_pos.x + player_size.x) - interactable_pos.x;
+                let right_penetration = (interactable_pos.x + interactable_size.x) - player_pos.x;
+                let top_penetration = (player_pos.y + player_size.y) - interactable_pos.y;
+                let bottom_penetration = (interactable_pos.y + interactable_size.y) - player_pos.y;
+
+                let min_penetration = left_penetration
+                    .min(right_penetration)
                     .min(top_penetration)
                     .min(bottom_penetration);
 
-                // Resolve collision based on minimum penetration
+                // Stop movement in the direction of the smallest overlap
                 if min_penetration == left_penetration && movement.x > 0.0 {
                     movement.x = 0.0;
                 } else if min_penetration == right_penetration && movement.x < 0.0 {

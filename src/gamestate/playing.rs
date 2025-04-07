@@ -1,11 +1,14 @@
 use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
-use crate::{controls::ControlHandler, debug, player};
+use macroquad::math::Vec2;
+use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
+use macroquad::text::TextParams;
+use crate::{controls::ControlHandler, debug, player, window_config};
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
 use crate::ui::tooltip::{tooltip, tooltip_card};
-use crate::util::draw_ansi_text;
+use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
 use crate::world::craft_example_rock;
 use crate::world::interactable::Interactable;
 use super::{GameState, GameStateAction, GameStateError};
@@ -122,18 +125,20 @@ impl GameState for PlayingGS {
         // clear the background and give a default color
         clear_background(Color::from_hex(0xf2b888));
         // draw the FPS counter in the top right
-        draw_text(&format!("FPS: {}", fps.round()), 2.0, 12.0, 20.0, BLACK);
+        draw_text_ex(&format!("FPS: {}", fps.round()), 2.0, 12.0, TextParams {
+            font: Some(&global_assets.font),
+            font_size: 8,
+            color: BLACK,
+            ..Default::default()
+        });
 
         // draw the player
-        if self.debug {
-            draw_text(&format!("Player Pos: {}", self.player.pos), 2.0, 28.0, 20.0, BLACK);
-            draw_text(&format!("Player Rot: {}", self.player.rotation), 2.0, 44.0, 20.0, BLACK);
-        }
         draw_texture_ex(
             &self.player.sprite, 
             self.player.pos.x, self.player.pos.y,  
             WHITE,
             DrawTextureParams {
+                dest_size: Some(vec2(32.0, 32.0)),
                 rotation: self.player.rotation,
                 ..Default::default()
             }
@@ -152,31 +157,47 @@ impl GameState for PlayingGS {
             );
         }
 
-        let ansi_test = format!("{}1{}2{}3{}4{}5{}6{}7{}8{}9{}0{}a{}b{}c{}d{}e{}f",
-                                better_term::Color::BrightBlue,
-                                better_term::Color::Green,
-                                better_term::Color::Cyan,
-                                better_term::Color::Red,
-                                better_term::Color::Purple,
-                                better_term::Color::Yellow,
-                                better_term::Color::White,
-                                better_term::Color::BrightBlack,
-                                better_term::Color::Blue,
-                                better_term::Color::Black,
-                                better_term::Color::BrightGreen,
-                                better_term::Color::BrightCyan,
-                                better_term::Color::BrightRed,
-                                better_term::Color::BrightPurple,
-                                better_term::Color::BrightYellow,
-                                better_term::Color::BrightWhite);
-        //debug!("{}", ansi_test.escape_default());
-        draw_ansi_text(
-            &ansi_test,
-            vec2(20.0, 40.0),
-            &global_assets,
-            8,
-            4.0,
-        );
+        if self.debug {
+            draw_text_ex(&format!("Player Pos: {}", self.player.pos), 2.0, 28.0, TextParams {
+                font: Some(&global_assets.font),
+                font_size: 8,
+                color: BLACK,
+                ..Default::default()
+            });
+            // draw_text_ex(&format!("Player Rot: {}", self.player.rotation), 2.0, 44.0, TextParams {
+            //     font: Some(&global_assets.font),
+            //     font_size: 8,
+            //     color: BLACK,
+            //     ..Default::default()
+            // });
+            let ansi_test = format!("Color Test: {}1{}2{}3{}4{}5{}6{}7{}8{}9{}0{}a{}b{}c{}d{}e{}f",
+                                    better_term::Color::BrightBlue,
+                                    better_term::Color::Green,
+                                    better_term::Color::Cyan,
+                                    better_term::Color::Red,
+                                    better_term::Color::Purple,
+                                    better_term::Color::Yellow,
+                                    better_term::Color::White,
+                                    better_term::Color::BrightBlack,
+                                    better_term::Color::Blue,
+                                    better_term::Color::Black,
+                                    better_term::Color::BrightGreen,
+                                    better_term::Color::BrightCyan,
+                                    better_term::Color::BrightRed,
+                                    better_term::Color::BrightPurple,
+                                    better_term::Color::BrightYellow,
+                                    better_term::Color::BrightWhite);
+            //debug!("{}", ansi_test.escape_default());
+            let raw_ansi_test = remove_ansii_escape_codes(&ansi_test);
+            let text_size = measure_text(&raw_ansi_test, Some(&global_assets.font), 8, 1.0);
+            draw_ansi_text(
+                &ansi_test,
+                vec2(screen_width() - (text_size.width + 10.0), 15.0),
+                &global_assets,
+                8,
+                4.0,
+            );
+        }
 
         // todo: this is still showing up on the pause menu :/
         // if the mouse is on an interactable, give a tooltip

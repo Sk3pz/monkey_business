@@ -2,6 +2,7 @@ use macroquad::math::vec2;
 use macroquad::prelude::load_texture;
 use crate::gamestate::{GameStateAction, GameStateError};
 use crate::{debug, player};
+use crate::controls::{Action, ControlHandler};
 use crate::ui::tooltip::ToolTipCard;
 use crate::world::interactable::Interactable;
 
@@ -15,11 +16,13 @@ pub async fn craft_example_rock() -> Result<Interactable, String> {
     }
     let rock = rock.unwrap();
 
+    let interact_btn = ControlHandler::load().unwrap_or(ControlHandler::default()).get_binding(&Action::Interact).unwrap();
+
     Ok(Interactable::new(
         "Rock Test".to_string(),
         ToolTipCard::new(format!("{}Rock Test", better_term::Color::BrightWhite),
-        vec![format!("{}Press {}e{} to interact.", better_term::Color::White,
-                     better_term::Color::BrightYellow, better_term::Color::White)]),
+        vec![format!("{}Press {}{}{} to interact.", better_term::Color::White,
+                     better_term::Color::BrightYellow, interact_btn, better_term::Color::White)]),
         vec2(100.0, 100.0),
         rock,
         0.0,

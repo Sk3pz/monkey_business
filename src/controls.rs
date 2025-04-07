@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::path::Path;
 use macroquad::input::{is_key_down, is_key_released, is_mouse_button_down, is_mouse_button_released, KeyCode, MouseButton};
 use serde::{Deserialize, Serialize};
@@ -75,6 +76,16 @@ impl Binding {
         Self {
             binding,
         }
+    }
+}
+
+impl Display for Binding {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut binding_list = self.binding.iter().map(|(k, _)| { match k {
+            BindingType::Key(k) => keycode_to_string(u16_to_keycode(*k)),
+            BindingType::Mouse(m) => mousecode_to_string(u16_to_mousecode(*m)),
+        } }).collect::<Vec<String>>();
+        write!(f, "{}", binding_list.join("+"))
     }
 }
 
@@ -199,6 +210,13 @@ impl ControlHandler {
         self.bindings.insert(action, new_key);
         
         self.save();
+    }
+
+    pub fn get_binding(&self, action: &Action) -> Option<Binding> {
+        if let Some(binding) = self.bindings.get(action) {
+            return Some(binding.clone());
+        }
+        None
     }
 }
 
@@ -390,4 +408,140 @@ pub fn u16_to_mousecode(key: u16) -> MouseButton {
         2 => MouseButton::Right,
         _ => MouseButton::Unknown,
     }
+}
+
+pub fn keycode_to_string(key: KeyCode) -> String {
+    match key {
+        KeyCode::Space => "Space",
+        KeyCode::Apostrophe => "'",
+        KeyCode::Comma => ",",
+        KeyCode::Minus => "-",
+        KeyCode::Period => ".",
+        KeyCode::Slash => "/",
+        KeyCode::Key0 => "0",
+        KeyCode::Key1 => "1",
+        KeyCode::Key2 => "2",
+        KeyCode::Key3 => "3",
+        KeyCode::Key4 => "4",
+        KeyCode::Key5 => "5",
+        KeyCode::Key6 => "6",
+        KeyCode::Key7 => "7",
+        KeyCode::Key8 => "8",
+        KeyCode::Key9 => "9",
+        KeyCode::Semicolon => ";",
+        KeyCode::Equal => "=",
+        KeyCode::A => "A",
+        KeyCode::B => "B",
+        KeyCode::C => "C",
+        KeyCode::D => "D",
+        KeyCode::E => "E",
+        KeyCode::F => "F",
+        KeyCode::G => "G",
+        KeyCode::H => "H",
+        KeyCode::I => "I",
+        KeyCode::J => "J",
+        KeyCode::K => "K",
+        KeyCode::L => "L",
+        KeyCode::M => "M",
+        KeyCode::N => "N",
+        KeyCode::O => "O",
+        KeyCode::P => "P",
+        KeyCode::Q => "Q",
+        KeyCode::R => "R",
+        KeyCode::S => "S",
+        KeyCode::T => "T",
+        KeyCode::U => "U",
+        KeyCode::V => "V",
+        KeyCode::W => "W",
+        KeyCode::X => "X",
+        KeyCode::Y => "Y",
+        KeyCode::Z => "Z",
+        KeyCode::LeftBracket => "[",
+        KeyCode::Backslash => "\\",
+        KeyCode::RightBracket => "]",
+        KeyCode::GraveAccent => "`",
+        KeyCode::World1 => "UKNWN",
+        KeyCode::World2 => "UKNWN",
+        KeyCode::Escape => "Esc",
+        KeyCode::Enter => "Enter",
+        KeyCode::Tab => "Tab",
+        KeyCode::Backspace => "BkSpace",
+        KeyCode::Insert => "Ins",
+        KeyCode::Delete => "Del",
+        KeyCode::Right => "Right",
+        KeyCode::Left => "Left",
+        KeyCode::Down => "Down",
+        KeyCode::Up => "Up",
+        KeyCode::PageUp => "PgUp",
+        KeyCode::PageDown => "PgDn",
+        KeyCode::Home => "Home",
+        KeyCode::End => "End",
+        KeyCode::CapsLock => "Caps",
+        KeyCode::ScrollLock => "Scroll",
+        KeyCode::NumLock => "Num",
+        KeyCode::PrintScreen => "PrntScrn",
+        KeyCode::Pause => "Pause",
+        KeyCode::F1 => "F1",
+        KeyCode::F2 => "F2",
+        KeyCode::F3 => "F3",
+        KeyCode::F4 => "F4",
+        KeyCode::F5 => "F5",
+        KeyCode::F6 => "F6",
+        KeyCode::F7 => "F7",
+        KeyCode::F8 => "F8",
+        KeyCode::F9 => "F9",
+        KeyCode::F10 => "F10",
+        KeyCode::F11 => "F11",
+        KeyCode::F12 => "F12",
+        KeyCode::F13 => "F13",
+        KeyCode::F14 => "F14",
+        KeyCode::F15 => "F15",
+        KeyCode::F16 => "F16",
+        KeyCode::F17 => "F17",
+        KeyCode::F18 => "F18",
+        KeyCode::F19 => "F19",
+        KeyCode::F20 => "F20",
+        KeyCode::F21 => "F21",
+        KeyCode::F22 => "F22",
+        KeyCode::F23 => "F23",
+        KeyCode::F24 => "F24",
+        KeyCode::F25 => "F25",
+        KeyCode::Kp0 => "Num0",
+        KeyCode::Kp1 => "Num1",
+        KeyCode::Kp2 => "Num2",
+        KeyCode::Kp3 => "Num3",
+        KeyCode::Kp4 => "Num4",
+        KeyCode::Kp5 => "Num5",
+        KeyCode::Kp6 => "Num6",
+        KeyCode::Kp7 => "Num7",
+        KeyCode::Kp8 => "Num8",
+        KeyCode::Kp9 => "Num9",
+        KeyCode::KpDecimal => "Num.",
+        KeyCode::KpDivide => "Num/",
+        KeyCode::KpMultiply => "Num*",
+        KeyCode::KpSubtract => "Num-",
+        KeyCode::KpAdd => "Num+",
+        KeyCode::KpEnter => "NumEnter",
+        KeyCode::KpEqual => "Num=",
+        KeyCode::LeftShift => "LShift",
+        KeyCode::LeftControl => "LCtrl",
+        KeyCode::LeftAlt => "LAlt",
+        KeyCode::LeftSuper => "LSuper",
+        KeyCode::RightShift => "RShift",
+        KeyCode::RightControl => "RControl",
+        KeyCode::RightAlt => "RAlt",
+        KeyCode::RightSuper => "RSuper",
+        KeyCode::Menu => "Menu",
+        KeyCode::Back => "Back",
+        KeyCode::Unknown => "UNKWN",
+    }.to_string()
+}
+
+pub fn mousecode_to_string(key: MouseButton) -> String {
+    match key {
+        MouseButton::Left => "MouseLeft",
+        MouseButton::Middle => "MouseMiddle",
+        MouseButton::Right => "MouseRight",
+        MouseButton::Unknown => "MouseUNKWN",
+    }.to_string()
 }
