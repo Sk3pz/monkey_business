@@ -1,6 +1,6 @@
 use macroquad::math::vec2;
 use macroquad::prelude::load_texture;
-use crate::gamestate::{GameStateAction, GameStateError};
+use crate::gamestate::GameStateAction;
 use crate::{debug, player};
 use crate::assets::GlobalAssets;
 use crate::controls::{Action, ControlHandler};
@@ -10,6 +10,8 @@ use crate::world::interactable::Interactable;
 
 pub mod interactable;
 
+
+// todo: make this multiple rocks
 pub async fn craft_example_rock() -> Result<Interactable, String> {
     // rock texture
     let rock = load_texture("assets/sprites/example_rock.png").await;

@@ -93,7 +93,7 @@ impl GameState for ExampleRockBreakGameGS {
                         // increment clicks
                         self.clicks += 1;
                         if self.clicks > 100 {
-                            // todo: win condition
+                            // todo: flag the rock for destruction
                         }
                     }
                     self.recently_clicked = false;
