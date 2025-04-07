@@ -1,6 +1,5 @@
 use macroquad::prelude::*;
 use std::f32::consts::PI;
-use regex::Regex;
 use crate::assets::GlobalAssets;
 
 const DEFAULT_COLOR: Color = WHITE;
@@ -137,83 +136,99 @@ struct TextSpan {
 
 /// Parses ANSI escape codes into colored spans
 pub fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
-    let re = Regex::new(r"(\x1B\[((?:\d+;?)*?)m)").unwrap();
-    let mut spans: Vec<Vec<TextSpan>> = vec![];
-    let mut current_line: Vec<TextSpan> = vec![];
+    let mut spans: Vec<Vec<TextSpan>> = Vec::new();
+    let mut current_line: Vec<TextSpan> = Vec::new();
     let mut current_color = DEFAULT_COLOR;
+    let mut buf = String::new();
 
-    let mut last_end = 0;
-    for cap in re.captures_iter(&input) {
-        let mat = cap.get(0).unwrap();
-        let code_str = cap.get(2).map_or("", |m| m.as_str());
+    let bytes = input.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == 0x1B && i + 1 < bytes.len() && bytes[i + 1] == b'[' {
+            // Flush existing text
+            if !buf.is_empty() {
+                for ch in buf.chars() {
+                    if ch == '\n' {
+                        spans.push(std::mem::take(&mut current_line));
+                    } else {
+                        current_line.push(TextSpan {
+                            text: ch.to_string(),
+                            color: current_color,
+                        });
+                    }
+                }
+                buf.clear();
+            }
 
-        // Add text between ANSI codes
-        let text = &input[last_end..mat.start()];
-        for ch in text.chars() {
+            // Find 'm' that ends the ANSI code
+            i += 2; // Skip \x1b[
+            let start = i;
+            while i < bytes.len() && bytes[i] != b'm' {
+                i += 1;
+            }
+
+            if i >= bytes.len() {
+                break; // Malformed ANSI sequence
+            }
+
+            let code_str = std::str::from_utf8(&bytes[start..i]).unwrap_or("");
+            i += 1; // Skip 'm'
+
+            let codes = code_str
+                .split(';')
+                .filter_map(|s| s.parse::<u8>().ok())
+                .collect::<Vec<_>>();
+
+            let mut j = 0;
+            while j < codes.len() {
+                match codes[j] {
+                    0 => current_color = WHITE,
+                    30 => current_color = Color::from_rgba(0x00, 0x00, 0x00, 255),
+                    31 => current_color = Color::from_rgba(0xAA, 0x00, 0x00, 255),
+                    32 => current_color = Color::from_rgba(0x00, 0xAA, 0x00, 255),
+                    33 => current_color = Color::from_rgba(0xFF, 0xAA, 0x00, 255),
+                    34 => current_color = Color::from_rgba(0x55, 0x55, 0xFF, 255),
+                    35 => current_color = Color::from_rgba(0xAA, 0x00, 0xAA, 255),
+                    36 => current_color = Color::from_rgba(0x00, 0xAA, 0xAA, 255),
+                    37 => current_color = Color::from_rgba(0xAA, 0xAA, 0xAA, 255),
+                    90 => current_color = Color::from_rgba(0x55, 0x55, 0x55, 255),
+                    91 => current_color = Color::from_rgba(0xFF, 0x55, 0x55, 255),
+                    92 => current_color = Color::from_rgba(0x55, 0xFF, 0x55, 255),
+                    93 => current_color = Color::from_rgba(0xFF, 0xFF, 0x55, 255),
+                    94 => current_color = Color::from_rgba(0x00, 0x00, 0xAA, 255),
+                    95 => current_color = Color::from_rgba(0xFF, 0x55, 0xFF, 255),
+                    96 => current_color = Color::from_rgba(0x55, 0xFF, 0xFF, 255),
+                    97 => current_color = Color::from_rgba(0xFF, 0xFF, 0xFF, 255),
+                    38 => {
+                        if j + 4 < codes.len() && codes[j + 1] == 2 {
+                            let r = codes[j + 2];
+                            let g = codes[j + 3];
+                            let b = codes[j + 4];
+                            current_color = Color::from_rgba(r, g, b, 255);
+                            j += 4;
+                        }
+                    }
+                    _ => {}
+                }
+                j += 1;
+            }
+        } else {
+            buf.push(input[i..=i].chars().next().unwrap());
+            i += input[i..].chars().next().unwrap().len_utf8();
+        }
+    }
+
+    // Flush trailing buffer
+    if !buf.is_empty() {
+        for ch in buf.chars() {
             if ch == '\n' {
-                spans.push(current_line);
-                current_line = vec![];
+                spans.push(std::mem::take(&mut current_line));
             } else {
                 current_line.push(TextSpan {
                     text: ch.to_string(),
                     color: current_color,
                 });
             }
-        }
-
-        // Parse ANSI codes
-        let codes: Vec<u8> = code_str
-            .split(';')
-            .filter_map(|s| s.parse::<u8>().ok())
-            .collect();
-
-        let mut i = 0;
-        while i < codes.len() {
-            match codes[i] {
-                0 => current_color = WHITE,
-                30 => current_color = Color::from_rgba(0x00, 0x00, 0x00, 255),
-                31 => current_color = Color::from_rgba(0xAA, 0x00, 0x00, 255),
-                32 => current_color = Color::from_rgba(0x00, 0xAA, 0x00, 255),
-                33 => current_color = Color::from_rgba(0xFF, 0xAA, 0x00, 255),
-                34 => current_color = Color::from_rgba(0x55, 0x55, 0xFF, 255),
-                35 => current_color = Color::from_rgba(0xAA, 0x00, 0xAA, 255),
-                36 => current_color = Color::from_rgba(0x00, 0xAA, 0xAA, 255),
-                37 => current_color = Color::from_rgba(0xAA, 0xAA, 0xAA, 255),
-                90 => current_color = Color::from_rgba(0x55, 0x55, 0x55, 255),
-                91 => current_color = Color::from_rgba(0xFF, 0x55, 0x55, 255),
-                92 => current_color = Color::from_rgba(0x55, 0xFF, 0x55, 255),
-                93 => current_color = Color::from_rgba(0xFF, 0xFF, 0x55, 255),
-                94 => current_color = Color::from_rgba(0x00, 0x00, 0xAA, 255),
-                95 => current_color = Color::from_rgba(0xFF, 0x55, 0xFF, 255),
-                96 => current_color = Color::from_rgba(0x55, 0xFF, 0xFF, 255),
-                97 => current_color = Color::from_rgba(0xFF, 0xFF, 0xFF, 255),
-                38 => {
-                    if i + 4 < codes.len() && codes[i + 1] == 2 {
-                        let r = codes[i + 2];
-                        let g = codes[i + 3];
-                        let b = codes[i + 4];
-                        current_color = Color::from_rgba(r, g, b, 255);
-                        i += 4;
-                    }
-                }
-                _ => {}
-            }
-            i += 1;
-        }
-
-        last_end = mat.end();
-    }
-
-    // Final trailing text
-    for ch in input[last_end..].chars() {
-        if ch == '\n' {
-            spans.push(current_line);
-            current_line = vec![];
-        } else {
-            current_line.push(TextSpan {
-                text: ch.to_string(),
-                color: current_color,
-            });
         }
     }
 
@@ -250,6 +265,28 @@ pub fn draw_ansi_text(text: &str, position: Vec2, assets: &GlobalAssets, font_si
 }
 
 pub fn remove_ansii_escape_codes(input: &str) -> String {
-    let re = Regex::new(r"\x1b\[[0-?9;]*m").unwrap();
-    re.replace_all(input, "").to_string()
+    let mut output = String::with_capacity(input.len());
+    let bytes = input.as_bytes();
+    let mut i = 0;
+
+    while i < bytes.len() {
+        if bytes[i] == 0x1B && i + 1 < bytes.len() && bytes[i + 1] == b'[' {
+            // Found the start of an ANSI escape sequence
+            i += 2;
+            while i < bytes.len() {
+                if (bytes[i] >= b'a' && bytes[i] <= b'z') || (bytes[i] >= b'A' && bytes[i] <= b'Z') {
+                    // ANSI sequence typically ends with a letter (e.g. 'm', 'K', etc.)
+                    i += 1;
+                    break;
+                }
+                i += 1;
+            }
+        } else {
+            // Normal character
+            output.push(input[i..].chars().next().unwrap());
+            i += input[i..].chars().next().unwrap().len_utf8();
+        }
+    }
+
+    output
 }
