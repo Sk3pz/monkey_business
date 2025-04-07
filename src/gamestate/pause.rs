@@ -20,7 +20,7 @@ impl PauseGS {
 
 impl GameState for PauseGS {
 
-    fn update(&mut self, _delta_time: &Duration) -> Result<GameStateAction, GameStateError> {
+    fn update(&mut self, _delta_time: &Duration, assets: &GlobalAssets) -> Result<GameStateAction, GameStateError> {
         let control_handler = ControlHandler::load();
         if let Err(e) = control_handler {
             return Err(GameStateError::RuntimeError(e));
@@ -31,7 +31,7 @@ impl GameState for PauseGS {
         for action in actions {
             match action {
                 Action::Pause => {
-                    if let Err(e) = self.previous_play_state.reload_controls() {
+                    if let Err(e) = self.previous_play_state.restore() {
                         return Err(e);
                     }
                     return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
@@ -45,10 +45,14 @@ impl GameState for PauseGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn draw(&self, global_assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
+    fn restore(&mut self) -> Result<(), GameStateError> {
+        Ok(())
+    }
+
+    fn draw(&self, assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
         // draw the player in the correct position
         // todo: this will not show updates to other players surrounding the player when networking is implemented, the update function may need to be called with a special pause flag?
-        self.previous_play_state.draw(global_assets, fps)?;
+        self.previous_play_state.draw(assets, fps)?;
 
         // draw a semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width(), screen_height(), Color::new(0.0, 0.0, 0.0, 0.5));

@@ -96,7 +96,7 @@ async fn main() {
         // == UPDATE ==
 
         // call the gamestate's update function
-        let update_result = gamestate.update(&delta_time);
+        let update_result = gamestate.update(&delta_time, &global_assets);
         if let Err(update_error) = update_result {
             // todo: maybe don't always crash if there's an error here?
             return error!("Failed to update gamestate: {}", update_error);

@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use macroquad::prelude::*;
-use crate::gamestate::{GameStateAction, GameStateError};
+use crate::assets::GlobalAssets;
+use crate::gamestate::{GameState, GameStateAction, GameStateError};
+use crate::gamestate::playing::PlayingGS;
 use crate::player::Player;
 use crate::ui::tooltip::ToolTipCard;
 
@@ -12,7 +14,7 @@ pub struct Interactable {
     pub sprite: Texture2D,
     pub rotation: f32,
 
-    interaction: fn(&mut Player) -> Result<GameStateAction, GameStateError>,
+    interaction: fn(assets: &GlobalAssets, &mut Player, previous_game_state: Option<PlayingGS>) -> Result<GameStateAction, GameStateError>,
 }
 
 impl Interactable {
@@ -22,7 +24,7 @@ impl Interactable {
         pos: Vec2,
         sprite: Texture2D,
         rotation: f32,
-        interaction: fn(&mut Player) -> Result<GameStateAction, GameStateError>,
+        interaction: fn(assets: &GlobalAssets, &mut Player, previous_game_state: Option<PlayingGS>) -> Result<GameStateAction, GameStateError>,
     ) -> Self {
         Self {
             name,
@@ -34,18 +36,20 @@ impl Interactable {
         }
     }
 
-    pub fn interact(&mut self, player: &mut Player) -> Result<GameStateAction, GameStateError> {
-        (self.interaction)(player)
+    pub fn interact(&mut self, assets: &GlobalAssets, player: &mut Player, previous_game_state: Option<PlayingGS>) -> Result<GameStateAction, GameStateError> {
+        (self.interaction)(assets, player, previous_game_state)
     }
 
     pub fn is_mouse_over(&self) -> bool {
-        let mouse_pos = mouse_position();
-        let pos = vec2(self.pos.x + self.sprite.width() / 2.0, self.pos.y + self.sprite.height() / 2.0);
-
-        let dx = mouse_pos.0 - pos.x;
-        let dy = mouse_pos.1 - pos.y;
-
-        dx * dx + dy * dy < (self.sprite.width() / 2.0).powi(2)
+        let mouse_pos = vec2(mouse_position().0, mouse_position().1);
+        let rect = Rect::new(self.pos.x, self.pos.y, self.sprite.width(), self.sprite.height());
+        rect.contains(mouse_pos)
+        // let pos = vec2(self.pos.x + self.sprite.width() / 2.0, self.pos.y + self.sprite.height() / 2.0);
+        //
+        // let dx = mouse_pos.0 - pos.x;
+        // let dy = mouse_pos.1 - pos.y;
+        //
+        // dx * dx + dy * dy < (self.sprite.width() / 2.0).powi(2)
     }
 }
 

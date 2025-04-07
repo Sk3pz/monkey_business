@@ -68,7 +68,7 @@ impl PlayingGS {
 
 impl GameState for PlayingGS {
 
-    fn update(&mut self, delta_time: &Duration) -> Result<GameStateAction, GameStateError> {
+    fn update(&mut self, delta_time: &Duration, assets: &GlobalAssets) -> Result<GameStateAction, GameStateError> {
 
         // make the player rotate towards the mouse
         // not top down anymore
@@ -94,10 +94,12 @@ impl GameState for PlayingGS {
                     movement.x += 1.0;
                 }
                 Action::Interact => {
+                    let clone = self.clone();
                     // check if mouse is on an interactable
                     for interactable in &mut self.interactables {
                         if interactable.is_mouse_over() {
-                            return interactable.interact(&mut self.player);
+                            let previous_game_state = Some(clone);
+                            return interactable.interact(assets, &mut self.player, previous_game_state);
                         }
                     }
                 }
@@ -121,12 +123,18 @@ impl GameState for PlayingGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn draw(&self, global_assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
+    fn restore(&mut self) -> Result<(), GameStateError> {
+        // Refresh everything that needs to be
+        self.reload_controls()?;
+        Ok(())
+    }
+
+    fn draw(&self, assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
         // clear the background and give a default color
         clear_background(Color::from_hex(0xf2b888));
         // draw the FPS counter in the top right
         draw_text_ex(&format!("FPS: {}", fps.round()), 2.0, 12.0, TextParams {
-            font: Some(&global_assets.font),
+            font: Some(&assets.font),
             font_size: 8,
             color: BLACK,
             ..Default::default()
@@ -159,7 +167,7 @@ impl GameState for PlayingGS {
 
         if self.debug {
             draw_text_ex(&format!("Player Pos: {}", self.player.pos), 2.0, 28.0, TextParams {
-                font: Some(&global_assets.font),
+                font: Some(&assets.font),
                 font_size: 8,
                 color: BLACK,
                 ..Default::default()
@@ -189,11 +197,11 @@ impl GameState for PlayingGS {
                                     better_term::Color::BrightWhite);
             //debug!("{}", ansi_test.escape_default());
             let raw_ansi_test = remove_ansii_escape_codes(&ansi_test);
-            let text_size = measure_text(&raw_ansi_test, Some(&global_assets.font), 8, 1.0);
+            let text_size = measure_text(&raw_ansi_test, Some(&assets.font), 8, 1.0);
             draw_ansi_text(
                 &ansi_test,
                 vec2(screen_width() - (text_size.width + 10.0), 15.0),
-                &global_assets,
+                &assets,
                 8,
                 4.0,
             );
@@ -203,7 +211,7 @@ impl GameState for PlayingGS {
         // if the mouse is on an interactable, give a tooltip
         for interactable in &self.interactables {
             if interactable.is_mouse_over() {
-                tooltip_card(interactable.tooltip.clone(), global_assets);
+                tooltip_card(interactable.tooltip.clone(), assets);
             }
         }
 

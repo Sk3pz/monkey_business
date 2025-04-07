@@ -2,7 +2,9 @@ use macroquad::math::vec2;
 use macroquad::prelude::load_texture;
 use crate::gamestate::{GameStateAction, GameStateError};
 use crate::{debug, player};
+use crate::assets::GlobalAssets;
 use crate::controls::{Action, ControlHandler};
+use crate::gamestate::example_rock_break_game::ExampleRockBreakGameGS;
 use crate::ui::tooltip::ToolTipCard;
 use crate::world::interactable::Interactable;
 
@@ -26,9 +28,10 @@ pub async fn craft_example_rock() -> Result<Interactable, String> {
         vec2(100.0, 100.0),
         rock,
         0.0,
-        |player: &mut player::Player| {
-
-
+        |assets: &GlobalAssets, player: &mut player::Player, previous_game_state| {
+            if let Some(gamestate) = previous_game_state {
+                return Ok(GameStateAction::ChangeState(ExampleRockBreakGameGS::new(gamestate).unwrap()));
+            }
 
             Ok(GameStateAction::NoOp)
         }

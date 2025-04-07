@@ -3,6 +3,7 @@ use crate::assets::GlobalAssets;
 
 pub mod playing;
 pub mod pause;
+pub mod example_rock_break_game;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GameStateError {
@@ -26,7 +27,8 @@ pub enum GameStateAction {
 
 pub trait GameState {
 
-    fn update(&mut self, delta_time: &Duration) -> Result<GameStateAction, GameStateError>;
-    fn draw(&self, global_assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError>;
+    fn update(&mut self, delta_time: &Duration, assets: &GlobalAssets) -> Result<GameStateAction, GameStateError>;
+    fn restore(&mut self) -> Result<(), GameStateError>;
+    fn draw(&self, assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError>;
 
 }
