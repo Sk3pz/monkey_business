@@ -33,7 +33,7 @@ impl World {
         let mut interactables: Vec<Box<dyn Interactable>> = Vec::new();
 
         for x in 0..5 {
-            let rock = ExampleRock::new(x, "Rock Pile".to_string(), vec2(gen_range(0.0, screen_width()), gen_range(0.0, screen_height())), gen_range(0.0, 360.0));
+            let rock = ExampleRock::new(x, "Rock Pile".to_string(), vec2(gen_range(20.0, screen_width() - 20.0), gen_range(20.0, screen_height() - 20.0)), gen_range(0.0, 360.0));
 
             interactables.push(Box::new(rock));
         }

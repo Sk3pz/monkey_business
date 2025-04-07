@@ -81,7 +81,7 @@ impl GameState for ExampleRockBreakGameGS {
 
                             // add a new rock to the world
                             let new_rock = ExampleRock::new(self.rock_id,
-                                                            format!("Rock {}", self.rock_id + 1),
+                                                            "Rock Pile".to_string(),
                                                             vec2(gen_range(20.0, screen_width() - 20.0), gen_range(20.0, screen_height() - 20.0)),
                                                             gen_range(0.0, 360.0));
 
@@ -99,7 +99,7 @@ impl GameState for ExampleRockBreakGameGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn pause(&mut self, data: &mut GameData) -> Result<(), GameStateError> {
+    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
         Ok(())
     }
 
