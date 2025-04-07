@@ -1,9 +1,8 @@
 use std::fmt::Display;
 use macroquad::prelude::*;
 use crate::assets::GlobalAssets;
+use crate::gamedata::GameData;
 use crate::gamestate::{GameStateAction, GameStateError};
-use crate::gamestate::playing::PlayingGS;
-use crate::player::Player;
 
 pub enum InteractableAttribute {
     Int(i32),
@@ -14,15 +13,15 @@ pub enum InteractableAttribute {
 }
 
 pub trait Interactable {
-    fn interact(&mut self, assets: &GlobalAssets, player: &mut Player, previous_game_state: Option<PlayingGS>) -> Result<GameStateAction, GameStateError>;
+    fn interact(&mut self) -> Result<GameStateAction, GameStateError>;
     fn get_name(&self) -> String;
     fn get_sprite(&self, assets: &GlobalAssets) -> Texture2D;
     fn get_pos(&self) -> Vec2;
     fn get_id(&self) -> u32;
     fn get_rotation(&self) -> f32;
     fn clone_box(&self) -> Box<dyn Interactable>;
-    fn is_mouse_over(&self, assets: &GlobalAssets) -> bool;
-    fn distance_from_player(&self, player: &Player, assets: &GlobalAssets) -> f32;
+    fn is_mouse_over(&self, data: &GameData) -> bool;
+    fn distance_from_player(&self, data: &GameData) -> f32;
     fn get_attribute(&self, attribute: &str) -> Option<InteractableAttribute>;
     fn set_attribute(&mut self, attribute: &str, value: InteractableAttribute) -> Result<(), String>;
 }

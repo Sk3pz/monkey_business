@@ -1,26 +1,22 @@
 use std::time::Duration;
 
 use macroquad::{color::Color, shapes::draw_rectangle, window::{screen_height, screen_width}};
-use crate::assets::GlobalAssets;
 use crate::controls::{Action, ControlHandler};
-use crate::debug;
-use super::{playing::PlayingGS, GameState, GameStateAction, GameStateError};
+use crate::gamedata::GameData;
+use super::{GameState, GameStateAction, GameStateError};
 
-pub struct PauseGS {
-    previous_play_state: PlayingGS,
-}
+#[derive(Debug)]
+pub struct PauseGS {}
 
 impl PauseGS {
-    pub fn new(previous_play_state: PlayingGS) -> Self {
-        Self {
-            previous_play_state,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
 impl GameState for PauseGS {
 
-    fn update(&mut self, _delta_time: &Duration, assets: &GlobalAssets) -> Result<GameStateAction, GameStateError> {
+    fn update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<GameStateAction, GameStateError> {
         let control_handler = ControlHandler::load();
         if let Err(e) = control_handler {
             return Err(GameStateError::RuntimeError(e));
@@ -34,8 +30,10 @@ impl GameState for PauseGS {
                     // if let Err(e) = self.previous_play_state.restore() {
                     //     return Err(e);
                     // }
-                    return Ok(GameStateAction::ChangeState(Box::new(self.previous_play_state.clone())));
+                    // pop the top state
+                    return Ok(GameStateAction::PopTopState);
                 }
+                // todo: UI stuff
                 _ => {
                     // do nothing
                 }
@@ -44,20 +42,15 @@ impl GameState for PauseGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn pause(&mut self) -> Result<(), GameStateError> {
+    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
         Ok(())
     }
 
-    fn restore(&mut self) -> Result<(), GameStateError> {
-        self.previous_play_state.pause()?;
+    fn restore(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
         Ok(())
     }
 
-    fn draw(&self, assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
-        // draw the player in the correct position
-        // todo: this will not show updates to other players surrounding the player when networking is implemented, the update function may need to be called with a special pause flag?
-        self.previous_play_state.draw(assets, fps)?;
-
+    fn draw(&self, _data: &mut GameData) -> Result<(), GameStateError> {
         // draw a semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width(), screen_height(), Color::new(0.0, 0.0, 0.0, 0.5));
 
@@ -67,5 +60,7 @@ impl GameState for PauseGS {
     fn get_name(&self) -> String {
         "Paused".to_string()
     }
+
+    fn is_overlay(&self) -> bool { true }
 
 }

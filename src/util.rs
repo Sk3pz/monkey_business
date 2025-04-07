@@ -137,10 +137,6 @@ struct TextSpan {
 
 /// Parses ANSI escape codes into colored spans
 pub fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
-    let input = input
-        .replace("\\u{1b}", "\x1b")
-        .replace("\u{1b}", "\x1b");
-
     let re = Regex::new(r"(\x1B\[((?:\d+;?)*?)m)").unwrap();
     let mut spans: Vec<Vec<TextSpan>> = vec![];
     let mut current_line: Vec<TextSpan> = vec![];
@@ -149,7 +145,6 @@ pub fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
     let mut last_end = 0;
     for cap in re.captures_iter(&input) {
         let mat = cap.get(0).unwrap();
-        let full_seq = mat.as_str();
         let code_str = cap.get(2).map_or("", |m| m.as_str());
 
         // Add text between ANSI codes

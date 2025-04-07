@@ -1,6 +1,7 @@
 use macroquad::math::Vec2;
 use macroquad::prelude::{mouse_position, vec2, Rect};
 use crate::assets::GlobalAssets;
+use crate::gamedata::GameData;
 use crate::gamestate::example_rock_break_game::ExampleRockBreakGameGS;
 use crate::gamestate::GameStateAction;
 use crate::player::Player;
@@ -28,12 +29,10 @@ impl ExampleRock {
 }
 
 impl Interactable for ExampleRock {
-    fn interact(&mut self, _assets: &GlobalAssets, _player: &mut Player, previous_game_state: Option<crate::gamestate::playing::PlayingGS>) -> Result<GameStateAction, crate::gamestate::GameStateError> {
-        if let Some(gamestate) = previous_game_state {
-            return Ok(GameStateAction::ChangeState(ExampleRockBreakGameGS::new(gamestate)?));
-        }
-
-        Ok(GameStateAction::NoOp)
+    fn interact(&mut self) -> Result<GameStateAction, crate::gamestate::GameStateError> {
+        Ok(GameStateAction::PushTopState(
+            ExampleRockBreakGameGS::new(self.id)?,
+        ))
     }
 
     fn get_name(&self) -> String {
@@ -66,15 +65,16 @@ impl Interactable for ExampleRock {
         })
     }
 
-    fn is_mouse_over(&self, assets: &GlobalAssets) -> bool {
+    fn is_mouse_over(&self, data: &GameData) -> bool {
         let mouse_pos = vec2(mouse_position().0, mouse_position().1);
-        let rect = Rect::new(self.pos.x, self.pos.y, self.get_sprite(assets).width(), self.get_sprite(assets).height());
+        let rect = Rect::new(self.pos.x, self.pos.y, self.get_sprite(&data.assets).width(), self.get_sprite(&data.assets).height());
         rect.contains(mouse_pos)
     }
 
-    fn distance_from_player(&self, player: &Player, assets: &GlobalAssets) -> f32 {
+    fn distance_from_player(&self, data: &GameData) -> f32 {
+        let player = &data.world.player;
         let player_pos = vec2(player.pos.x + player.sprite.width() / 2.0, player.pos.y + player.sprite.height() / 2.0);
-        let sprite = self.get_sprite(assets);
+        let sprite = self.get_sprite(&data.assets);
         let interactable_pos = vec2(self.pos.x + sprite.width() / 2.0, self.pos.y + sprite.height() / 2.0);
         let dx = interactable_pos.x - player_pos.x;
         let dy = interactable_pos.y - player_pos.y;
