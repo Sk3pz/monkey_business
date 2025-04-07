@@ -1,28 +1,32 @@
 use std::fmt::Display;
 use macroquad::prelude::*;
-use crate::gamestate::GameStateAction;
+use crate::gamestate::{GameStateAction, GameStateError};
 use crate::player::Player;
+use crate::ui::tooltip::ToolTipCard;
 
 #[derive(Clone, Debug)]
 pub struct Interactable {
     pub name: String,
+    pub tooltip: ToolTipCard,
     pub pos: Vec2,
     pub sprite: Texture2D,
     pub rotation: f32,
 
-    interaction: fn(&mut Player) -> GameStateAction,
+    interaction: fn(&mut Player) -> Result<GameStateAction, GameStateError>,
 }
 
 impl Interactable {
     pub fn new(
         name: String,
+        tooltip: ToolTipCard,
         pos: Vec2,
         sprite: Texture2D,
         rotation: f32,
-        interaction: fn(&mut Player) -> GameStateAction,
+        interaction: fn(&mut Player) -> Result<GameStateAction, GameStateError>,
     ) -> Self {
         Self {
             name,
+            tooltip,
             pos,
             sprite,
             rotation,
@@ -30,7 +34,7 @@ impl Interactable {
         }
     }
 
-    pub fn interact(&mut self, player: &mut Player) -> GameStateAction {
+    pub fn interact(&mut self, player: &mut Player) -> Result<GameStateAction, GameStateError> {
         (self.interaction)(player)
     }
 

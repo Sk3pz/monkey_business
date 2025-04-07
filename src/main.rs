@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 use gamestate::GameState;
-use macroquad::audio::{load_sound, play_sound, PlaySoundParams};
 use macroquad::prelude::*;
 
 /***
@@ -28,6 +27,9 @@ mod networking;
 mod gamestate;
 mod logging;
 mod world;
+mod ui;
+mod util;
+mod assets;
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
@@ -45,10 +47,11 @@ fn window_config() -> Conf {
 #[macroquad::main(window_config)]
 async fn main() {
 
-    // todo: move this to its own music handler
-    let Ok(music) = load_sound("assets/audio/music/Ghouls.wav").await else {
-        return error!("Failed to load sound");
-    };
+    let global_assets = assets::GlobalAssets::load().await;
+    if let Err(e) = global_assets {
+        return error!("Failed to load global assets: {}", e);
+    }
+    let global_assets = global_assets.unwrap();
 
     // create a dynamic gamestate object
     let gamestate = gamestate::playing::PlayingGS::new().await;
@@ -62,11 +65,6 @@ async fn main() {
     let mut fps_values = vec![0.0; FPS_SMOOTHING_FRAMES];
     let mut fps_index = 0;
     let mut fps_sum = 0.0;
-    
-    // play_sound(&music, PlaySoundParams {
-    //     looped: true,
-    //     volume: 0.1,
-    // });
 
     // render loop
     loop {
@@ -114,7 +112,7 @@ async fn main() {
         // == RENDER ==
 
         // call the gamestate's draw function
-        if let Err(draw_error) = gamestate.draw(smoothed_fps) {
+        if let Err(draw_error) = gamestate.draw(&global_assets, smoothed_fps) {
             // todo: maybe don't always crash here?
             return error!("Failed to draw gamestate: {}", draw_error);
         }

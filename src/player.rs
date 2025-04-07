@@ -7,8 +7,8 @@ use crate::debug;
 use crate::world::interactable::Interactable;
 
 pub const PLAYER_SPEED: f32 = 5.0;
-const PLAYER_SCALE: (f32, f32) = (32.0, 32.0);
-const COLLISION_PADDING: f32 = 10.0; // padding for collisions
+const PLAYER_SCALE: (f32, f32) = (16.0, 16.0);
+const COLLISION_PADDING: f32 = 2.0; // padding for collisions (inverse for some reason)
 
 #[derive(Clone)]
 pub struct Player {
@@ -22,7 +22,7 @@ impl Player {
     pub async fn new() -> Result<Self, String> {
         
         // player texture
-        let player = load_texture("assets/sprites/monke.png").await;
+        let player = load_texture("assets/sprites/monke2.png").await;
         if let Err(e) = player {
             return Err(format!("Failed to load texture files: {}", e));
         }
@@ -45,6 +45,7 @@ impl Player {
 
         // add collisions with interactables
         for interactable in interactables {
+            // todo: comprehend
             let interactable_pos = vec2(interactable.pos.x + COLLISION_PADDING, interactable.pos.y + COLLISION_PADDING);
             let interactable_size = vec2(interactable.sprite.width() - COLLISION_PADDING * 2.0, interactable.sprite.height() - COLLISION_PADDING * 2.0);
 
@@ -73,8 +74,6 @@ impl Player {
                 } else if min_penetration == bottom_penetration && movement.y < 0.0 {
                     movement.y = 0.0;
                 }
-
-                debug!("Collision: {}", interactable);
             }
         }
 

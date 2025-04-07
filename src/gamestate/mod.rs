@@ -1,4 +1,5 @@
 use std::{fmt::{self, Display, Formatter}, time::Duration};
+use crate::assets::GlobalAssets;
 
 pub mod playing;
 pub mod pause;
@@ -26,6 +27,6 @@ pub enum GameStateAction {
 pub trait GameState {
 
     fn update(&mut self, delta_time: &Duration) -> Result<GameStateAction, GameStateError>;
-    fn draw(&self, fps: f32) -> Result<(), GameStateError>;
+    fn draw(&self, global_assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError>;
 
 }

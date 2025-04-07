@@ -1,9 +1,12 @@
 use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK, WHITE}, math::vec2, text::draw_text, texture::{draw_texture_ex, DrawTextureParams}, window::clear_background};
-use macroquad::prelude::load_texture;
 use crate::{controls::ControlHandler, debug, player};
+use crate::assets::GlobalAssets;
 use crate::controls::Action;
+use crate::ui::tooltip::{tooltip, tooltip_card};
+use crate::util::draw_ansi_text;
+use crate::world::craft_example_rock;
 use crate::world::interactable::Interactable;
 use super::{GameState, GameStateAction, GameStateError};
 
@@ -33,24 +36,13 @@ impl PlayingGS {
 
         // == rock test ==
 
-        // rock texture
-        let rock = load_texture("assets/sprites/example_rock.png").await;
+        let rock = craft_example_rock().await;
         if let Err(e) = rock {
-            return Err(GameStateError::InitializationError(format!("Failed to load texture files: {}", e)));
+            return Err(GameStateError::InitializationError(format!("Failed to initialize interactable: {}", e)));
         }
         let rock = rock.unwrap();
 
-        interactables.push(Interactable::new(
-            "rock test".to_string(),
-            vec2(100.0, 100.0),
-            rock,
-            0.0,
-            |player: &mut player::Player| {
-                debug!("Interacted with rock!");
-                player.pos.x += 10.0;
-                GameStateAction::NoOp
-            }
-        ));
+        interactables.push(rock);
 
         Ok(Box::new(Self {
             player,
@@ -76,7 +68,8 @@ impl GameState for PlayingGS {
     fn update(&mut self, delta_time: &Duration) -> Result<GameStateAction, GameStateError> {
 
         // make the player rotate towards the mouse
-        self.player.look_towards_mouse();
+        // not top down anymore
+        //self.player.look_towards_mouse();
 
         // handle input and make the player respond accordingly
         let actions = self.control_handler.get_actions();
@@ -98,15 +91,18 @@ impl GameState for PlayingGS {
                     movement.x += 1.0;
                 }
                 Action::Interact => {
-
+                    // check if mouse is on an interactable
+                    for interactable in &mut self.interactables {
+                        if interactable.is_mouse_over() {
+                            return interactable.interact(&mut self.player);
+                        }
+                    }
                 }
                 Action::Inventory => {
                     // todo: add an inventory system and open it here
-                    debug!("Opened inventory!");
                 }
                 Action::BasicAttack => {
                     // todo: add attacks
-                    debug!("Attacked!");
                 }
                 Action::Debug => {
                     self.debug = !self.debug;
@@ -122,7 +118,7 @@ impl GameState for PlayingGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn draw(&self, fps: f32) -> Result<(), GameStateError> {
+    fn draw(&self, global_assets: &GlobalAssets, fps: f32) -> Result<(), GameStateError> {
         // clear the background and give a default color
         clear_background(Color::from_hex(0xf2b888));
         // draw the FPS counter in the top right
@@ -154,8 +150,40 @@ impl GameState for PlayingGS {
                     ..Default::default()
                 }
             );
-            // draw the name of the interactable
-            draw_text(&interactable.name, interactable.pos.x - 25.0, interactable.pos.y - 10.0, 20.0, BLACK);
+        }
+
+        let ansi_test = format!("{}1{}2{}3{}4{}5{}6{}7{}8{}9{}0{}a{}b{}c{}d{}e{}f",
+                                better_term::Color::BrightBlue,
+                                better_term::Color::Green,
+                                better_term::Color::Cyan,
+                                better_term::Color::Red,
+                                better_term::Color::Purple,
+                                better_term::Color::Yellow,
+                                better_term::Color::White,
+                                better_term::Color::BrightBlack,
+                                better_term::Color::Blue,
+                                better_term::Color::Black,
+                                better_term::Color::BrightGreen,
+                                better_term::Color::BrightCyan,
+                                better_term::Color::BrightRed,
+                                better_term::Color::BrightPurple,
+                                better_term::Color::BrightYellow,
+                                better_term::Color::BrightWhite);
+        //debug!("{}", ansi_test.escape_default());
+        draw_ansi_text(
+            &ansi_test,
+            vec2(20.0, 40.0),
+            &global_assets,
+            8,
+            4.0,
+        );
+
+        // todo: this is still showing up on the pause menu :/
+        // if the mouse is on an interactable, give a tooltip
+        for interactable in &self.interactables {
+            if interactable.is_mouse_over() {
+                tooltip_card(interactable.tooltip.clone(), global_assets);
+            }
         }
 
         Ok(())

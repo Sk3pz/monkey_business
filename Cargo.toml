@@ -9,6 +9,7 @@ serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 include_assets = "*"
 better_term = "*"
+regex = "*"
 
 [dependencies.macroquad]
 version = "0.4.14"
