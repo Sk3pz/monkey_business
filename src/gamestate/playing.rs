@@ -42,7 +42,7 @@ impl PlayingGS {
         // == rock test ==
 
         for x in 0..5 {
-            let rock = ExampleRock::new(x, format!("Rock {}", x), vec2(gen_range(0.0, screen_width()), gen_range(0.0, screen_height())), gen_range(0.0, 360.0));
+            let rock = ExampleRock::new(x, "Rock Pile".to_string(), vec2(gen_range(0.0, screen_width()), gen_range(0.0, screen_height())), gen_range(0.0, 360.0));
 
             interactables.push(Box::new(rock));
         }
