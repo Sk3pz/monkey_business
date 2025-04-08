@@ -161,7 +161,7 @@ impl GameState for PlayingGS {
                     TextParams {
                         font: Some(&data.assets.font),
                         font_size: 8,
-                        color: WHITE,
+                        color: Color::from_rgba(255, 255, 255, 180),
                         ..Default::default()
                     },
                 );
