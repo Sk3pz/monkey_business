@@ -92,6 +92,7 @@ impl Display for Binding {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ControlHandler {
     bindings: HashMap<Action, Binding>,
+    toggle_sprint: bool,
 }
 
 impl ControlHandler {
@@ -218,6 +219,25 @@ impl ControlHandler {
         }
         None
     }
+
+    pub fn is_sprint_toggle(&self) -> bool {
+        self.toggle_sprint
+    }
+
+    pub fn set_sprint_toggle(&mut self, toggle: bool) {
+        let current_sprint_bind = self.bindings.get(&Action::Sprint).unwrap();
+        if toggle {
+            // Change the sprint binding to toggle, using the key that was already bound
+            let new_sprint_bind = Binding::new(vec![(current_sprint_bind.binding[0].0, ExpectedPressType::Release)]);
+            self.edit_keybind(Action::Sprint, new_sprint_bind);
+        } else {
+            // Change the sprint binding to hold, using the key that was already bound
+            let new_sprint_bind = Binding::new(vec![(current_sprint_bind.binding[0].0, ExpectedPressType::Press)]);
+            self.edit_keybind(Action::Sprint, new_sprint_bind);
+        }
+        // reflect the change in the struct
+        self.toggle_sprint = toggle;
+    }
 }
 
 impl Default for ControlHandler {
@@ -238,8 +258,9 @@ impl Default for ControlHandler {
         bindings.insert(Action::MoveRight, Binding::new(
             vec!((BindingType::Key(KeyCode::D as u16), ExpectedPressType::Press))));
 
+        // Sprinting defaults to hold
         bindings.insert(Action::Sprint, Binding::new(vec!((BindingType::Key(KeyCode::LeftShift as u16),
-                                                           ExpectedPressType::Press)))); // todo: change to release for toggle sprint
+                                                           ExpectedPressType::Press))));
 
         // == Interaction ==
 
@@ -271,6 +292,7 @@ impl Default for ControlHandler {
         
         Self {
             bindings,
+            toggle_sprint: false,
         }
     }
 }

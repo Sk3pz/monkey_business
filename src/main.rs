@@ -14,9 +14,7 @@ use crate::world::World;
    https://crates.io/crates/ggrs
 ***/
 
-mod player;
 mod controls;
-mod networking;
 mod gamestate;
 mod logging;
 mod world;
@@ -24,6 +22,14 @@ mod ui;
 mod util;
 mod assets;
 mod gamedata;
+mod settings;
+mod animation;
+/***
+ * TODO:
+ *   - Better error handling + log files
+ *   - Plan Story
+ *   - Animation system for sprites
+***/
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
@@ -58,12 +64,23 @@ async fn main() {
     // the previous gamestate
     let mut gamestate_manager = gamestate::GameStateManager::new(gamestate);
 
+    // load the settings
+    // todo: let settings = settings::Settings::load();
+    let settings = settings::Settings {
+        volume: 1.0,
+        mute: false,
+    };
+
     // load the control handler
     let control_handler = controls::ControlHandler::load();
     if let Err(e) = control_handler {
         return error!("Failed to load control handler: {}", e);
     }
-    let control_handler = control_handler.unwrap();
+    let mut control_handler = control_handler.unwrap();
+    // TODO: remove this when settings are implemented properly.
+    //   this changes the bind based on the controls.dat file, which is currently the only way
+    //   to change sprinting between toggled and held
+    control_handler.set_sprint_toggle(control_handler.is_sprint_toggle());
 
     // create the world
     let world = World::new().await;
@@ -76,6 +93,7 @@ async fn main() {
     let mut gamedata = gamedata::GameData {
         fps: 0.0,
         assets: global_assets.clone(),
+        settings,
         control_handler,
         world,
     };

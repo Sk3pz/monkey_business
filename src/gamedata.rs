@@ -1,11 +1,13 @@
 use crate::assets::GlobalAssets;
 use crate::controls::ControlHandler;
+use crate::settings::Settings;
 use crate::world::World;
 
 pub struct GameData {
     // Render Data
     pub fps: f32,
     // Global Data
+    pub settings: Settings,
     pub assets: GlobalAssets,
     pub control_handler: ControlHandler,
     pub world: World,

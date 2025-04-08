@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::prelude::{draw_texture_ex, screen_height, screen_width, DrawTextureParams};
@@ -5,13 +6,14 @@ use macroquad::rand::gen_range;
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
 use crate::gamedata::GameData;
-use crate::player::Player;
 use crate::ui::tooltip::{tooltip, ToolTipCard};
 use crate::world::example_rock::ExampleRock;
 use crate::world::interactable::{Interactable, InteractableAttribute};
+use crate::world::player::{Player, PlayerFacing};
 
 pub mod interactable;
 pub mod example_rock;
+pub mod player;
 
 pub struct World {
     pub player: Player,
@@ -70,6 +72,9 @@ impl World {
             DrawTextureParams {
                 dest_size: Some(vec2(32.0, 32.0)),
                 rotation: self.player.rotation,
+                flip_x: self.player.facing == PlayerFacing::UpLeft || self.player.facing == PlayerFacing::DownLeft,
+                flip_y: false, // never true because of isometric projection
+                source: None, // todo: use for animation sprite sheets
                 ..Default::default()
             }
         );

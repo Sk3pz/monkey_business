@@ -1,11 +1,14 @@
 use std::time::Duration;
 
 use macroquad::{color::{Color, BLACK}, math::vec2, window::clear_background};
+use macroquad::color::WHITE;
+use macroquad::input::KeyCode::P;
 use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
 use macroquad::text::TextParams;
 use crate::controls::Action;
 use crate::gamedata::GameData;
 use crate::gamestate::pause::PauseGS;
+use crate::world::player::PlayerFacing;
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
 use super::{GameState, GameStateAction, GameStateError};
 
@@ -32,6 +35,13 @@ impl GameState for PlayingGS {
         // not top down anymore
         //self.player.look_towards_mouse();
 
+        let sprinting_toggled = data.control_handler.is_sprint_toggle();
+        if !sprinting_toggled {
+            // if sprinting is not in toggle mode, it will be set to true each frame only if the button is pressed
+            // this is a limitation of Banana Engine that should be addressed in the future, possibly with a control handler rework
+            data.world.player.sprinting = false;
+        }
+
         // handle input and make the player respond accordingly
         let actions = data.control_handler.get_actions();
         let mut movement = vec2(0.0, 0.0);
@@ -41,21 +51,52 @@ impl GameState for PlayingGS {
                 // todo: add limits like obstacles
                 Action::MoveUp => {
                     movement.y -= 1.0;
+                    data.world.player.facing = match data.world.player.facing {
+                        PlayerFacing::UpRight => PlayerFacing::UpRight,
+                        PlayerFacing::UpLeft => PlayerFacing::UpLeft,
+                        PlayerFacing::DownLeft => PlayerFacing::UpLeft,
+                        PlayerFacing::DownRight => PlayerFacing::UpRight,
+                    };
                 }
                 Action::MoveDown => {
                     movement.y += 1.0;
+                    data.world.player.facing = match data.world.player.facing {
+                        PlayerFacing::UpRight => PlayerFacing::DownRight,
+                        PlayerFacing::UpLeft => PlayerFacing::DownLeft,
+                        PlayerFacing::DownLeft => PlayerFacing::DownLeft,
+                        PlayerFacing::DownRight => PlayerFacing::DownRight,
+                    };
                 }
                 Action::MoveLeft => {
                     movement.x -= 1.0;
+                    data.world.player.facing = match data.world.player.facing {
+                        PlayerFacing::UpRight => PlayerFacing::UpLeft,
+                        PlayerFacing::UpLeft => PlayerFacing::UpLeft,
+                        PlayerFacing::DownLeft => PlayerFacing::DownLeft,
+                        PlayerFacing::DownRight => PlayerFacing::DownLeft,
+                    };
                 }
                 Action::MoveRight => {
                     movement.x += 1.0;
+                    data.world.player.facing = match data.world.player.facing {
+                        PlayerFacing::UpRight => PlayerFacing::UpRight,
+                        PlayerFacing::UpLeft => PlayerFacing::UpRight,
+                        PlayerFacing::DownLeft => PlayerFacing::DownRight,
+                        PlayerFacing::DownRight => PlayerFacing::DownRight,
+                    };
                 }
                 Action::Interact => {
                     if let Some(id) = data.world.is_click_on_interactable(data) {
                         if let Some(interactable) = data.world.get_mut_interactable_by_id(id) {
                             return interactable.interact();
                         }
+                    }
+                }
+                Action::Sprint => {
+                    if sprinting_toggled {
+                        data.world.player.sprinting = !data.world.player.sprinting;
+                    } else {
+                        data.world.player.sprinting = true;
                     }
                 }
                 Action::Inventory => {
@@ -95,13 +136,6 @@ impl GameState for PlayingGS {
     fn draw(&self, data: &mut GameData) -> Result<(), GameStateError> {
         // clear the background and give a default color
         clear_background(Color::from_hex(0x453e3d));
-        // draw the FPS counter in the top right
-        draw_text_ex(&format!("FPS: {}", data.fps.round()), 2.0, 12.0, TextParams {
-            font: Some(&data.assets.font),
-            font_size: 8,
-            color: BLACK,
-            ..Default::default()
-        });
 
         // draw the player
         data.world.draw_player();
@@ -110,18 +144,29 @@ impl GameState for PlayingGS {
         data.world.draw_interactables(&data.assets);
 
         if self.debug {
-            draw_text_ex(&format!("Player Pos: {}", data.world.player.pos), 2.0, 28.0, TextParams {
-                font: Some(&data.assets.font),
-                font_size: 8,
-                color: BLACK,
-                ..Default::default()
-            });
-            draw_text_ex(&format!("Paused: {}", self.paused), 2.0, 44.0, TextParams {
-                font: Some(&data.assets.font),
-                font_size: 8,
-                color: BLACK,
-                ..Default::default()
-            });
+            let spacing = 4.0;
+            let debug_info = vec![
+                format!("FPS: {}", data.fps.round()),
+                format!("Player Pos: {}", data.world.player.pos.round()),
+                format!("Paused: {}", self.paused),
+                format!("Sprinting: {}", data.world.player.sprinting),
+                format!("Facing: {:?}", data.world.player.facing),
+            ];
+            for (i, info) in debug_info.iter().enumerate() {
+                let text_size = measure_text(info, Some(&data.assets.font), 8, 1.0);
+                draw_text_ex(
+                    info,
+                    spacing,
+                    (text_size.height + spacing) * (i + 1) as f32,
+                    TextParams {
+                        font: Some(&data.assets.font),
+                        font_size: 8,
+                        color: WHITE,
+                        ..Default::default()
+                    },
+                );
+            }
+
             let ansi_test = format!("Color Test: {}1{}2{}3{}4{}5{}6{}7{}8{}9{}0{}a{}b{}c{}d{}e{}f",
                                     better_term::Color::BrightBlue,
                                     better_term::Color::Green,
@@ -144,7 +189,7 @@ impl GameState for PlayingGS {
             let text_size = measure_text(&raw_ansi_test, Some(&data.assets.font), 8, 1.0);
             draw_ansi_text(
                 &ansi_test,
-                vec2(screen_width() - (text_size.width + 10.0), 15.0),
+                vec2(screen_width() - (text_size.width + spacing), text_size.height + spacing),
                 &data.assets,
                 8,
                 4.0,

@@ -10,11 +10,21 @@ use crate::world::interactable::Interactable;
 pub const PLAYER_SPEED: f32 = 5.0;
 const PLAYER_SCALE: (f32, f32) = (16.0, 16.0);
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PlayerFacing {
+    UpRight,
+    UpLeft,
+    DownRight,
+    DownLeft,
+}
+
 #[derive(Clone)]
 pub struct Player {
     pub pos: Vec2,
     pub sprite: Texture2D,
-    pub rotation: f32
+    pub rotation: f32,
+    pub sprinting: bool,
+    pub facing: PlayerFacing,
 }
 
 impl Player {
@@ -33,6 +43,8 @@ impl Player {
             pos: vec2(0.0, 0.0),
             sprite: player,
             rotation: 0.0,
+            sprinting: false,
+            facing: PlayerFacing::UpRight,
         })
     }
 
@@ -44,9 +56,13 @@ impl Player {
             movement = movement.normalize() * (PLAYER_SPEED / delta_time as f32);
         }
 
+        // sprinting
+        if self.sprinting {
+            movement *= 2.0;
+        }
+
         // add collisions with interactables
         for interactable in interactables {
-            // todo: comprehend
             let player_size = vec2(self.sprite.width(), self.sprite.height());
             let player_pos = vec2(self.pos.x - player_size.x / 2.0, self.pos.y - player_size.y / 2.0);
 
