@@ -1,4 +1,3 @@
-use std::cmp::PartialEq;
 use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::prelude::{draw_texture_ex, screen_height, screen_width, DrawTextureParams};
@@ -26,7 +25,7 @@ impl World {
         if let Err(e) = player {
             return Err(format!("Failed to initialize player: {}", e));
         }
-        let player = player.unwrap();
+        let player = player?;
 
         let mut interactables: Vec<Box<dyn Interactable>> = Vec::new();
 

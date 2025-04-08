@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use macroquad::{color::{Color, BLACK}, math::vec2, window::clear_background};
-use macroquad::color::WHITE;
-use macroquad::input::KeyCode::P;
+use macroquad::{color::Color, math::vec2, window::clear_background};
 use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
 use macroquad::text::TextParams;
 use crate::controls::Action;
@@ -15,7 +13,7 @@ use super::{GameState, GameStateAction, GameStateError};
 #[derive(Clone, Debug)]
 pub struct PlayingGS {
     paused: bool,
-    debug: bool,
+    debug: bool, // todo: move this to gamedata
 }
 
 impl PlayingGS {

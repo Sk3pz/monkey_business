@@ -91,8 +91,8 @@ impl Display for Binding {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ControlHandler {
-    bindings: HashMap<Action, Binding>,
     toggle_sprint: bool,
+    bindings: HashMap<Action, Binding>,
 }
 
 impl ControlHandler {
