@@ -1,14 +1,10 @@
 use macroquad::color::WHITE;
-use macroquad::input::mouse_position;
 use macroquad::math::vec2;
 use macroquad::prelude::{draw_texture_ex, screen_height, screen_width, DrawTextureParams};
 use macroquad::rand::gen_range;
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
 use crate::gamedata::GameData;
-use crate::gamestate::{GameStateAction, GameStateError};
-use crate::logging::timed;
-use crate::{debug, info, player};
 use crate::player::Player;
 use crate::ui::tooltip::{tooltip, ToolTipCard};
 use crate::world::example_rock::ExampleRock;
@@ -24,7 +20,7 @@ pub struct World {
 
 impl World {
     pub async fn new() -> Result<Self, String> {
-        let player = player::Player::new().await;
+        let player = Player::new().await;
         if let Err(e) = player {
             return Err(format!("Failed to initialize player: {}", e));
         }
@@ -53,7 +49,7 @@ impl World {
     }
 
     pub fn break_interactable(&mut self, id: u32) -> Result<(), String> {
-        if let Some(interactable) = self.get_mut_interactable_by_id(id) {
+        if let Some(_) = self.get_mut_interactable_by_id(id) {
             // remove the interactable from the world
             self.interactables.retain(|i| i.get_id() != id);
             Ok(())
@@ -80,7 +76,6 @@ impl World {
     }
 
     pub fn is_click_on_interactable(&self, data: &GameData) -> Option<u32> {
-        let mouse_pos = mouse_position();
         for interactable in &self.interactables {
             if interactable.is_mouse_over(data) && interactable.distance_from_player(data) <= 100.0 {
                 return Some(interactable.get_id());

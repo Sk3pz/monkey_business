@@ -81,7 +81,7 @@ impl Binding {
 
 impl Display for Binding {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut binding_list = self.binding.iter().map(|(k, _)| { match k {
+        let binding_list = self.binding.iter().map(|(k, _)| { match k {
             BindingType::Key(k) => keycode_to_string(u16_to_keycode(*k)),
             BindingType::Mouse(m) => mousecode_to_string(u16_to_mousecode(*m)),
         } }).collect::<Vec<String>>();

@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-use crate::gamestate::GameStateError;
 
 #[derive(Clone)]
 pub struct GlobalAssets {

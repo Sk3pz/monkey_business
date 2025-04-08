@@ -135,7 +135,7 @@ struct TextSpan {
 }
 
 /// Parses ANSI escape codes into colored spans
-pub fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
+fn parse_ansi(input: &str) -> Vec<Vec<TextSpan>> {
     let mut spans: Vec<Vec<TextSpan>> = Vec::new();
     let mut current_line: Vec<TextSpan> = Vec::new();
     let mut current_color = DEFAULT_COLOR;

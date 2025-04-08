@@ -5,12 +5,10 @@ use macroquad::miniquad::FilterMode;
 use macroquad::prelude::{load_texture, Texture2D};
 use macroquad::window::{screen_height, screen_width};
 use crate::assets::GlobalAssets;
-use crate::debug;
 use crate::world::interactable::Interactable;
 
 pub const PLAYER_SPEED: f32 = 5.0;
 const PLAYER_SCALE: (f32, f32) = (16.0, 16.0);
-const COLLISION_PADDING: f32 = 2.0; // padding for collisions (inverse for some reason)
 
 #[derive(Clone)]
 pub struct Player {

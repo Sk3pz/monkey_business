@@ -1,14 +1,9 @@
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::AtomicBool;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use gamestate::GameState;
 use macroquad::prelude::*;
-use macroquad::ui::KeyCode::V;
-use crate::gamestate::GameStateError;
 use crate::world::World;
 /***
  # SAVED RESOURCES:
-   https://macroquad.rs/articles/fish-tutorial/
    https://docs.rs/macroquad/latest/macroquad/
    https://github.com/not-fl3/macroquad/blob/master/examples/ui.rs
    https://github.com/not-fl3/macroquad/blob/master/examples/texture.rs
@@ -18,10 +13,6 @@ use crate::world::World;
    NETWORKING:
    https://crates.io/crates/ggrs
 ***/
-
-/* TODO BUGS:
-    * Fix reoccurring issue where the player randomly gains unreasonable velocity
-*/
 
 mod player;
 mod controls;
@@ -144,7 +135,7 @@ async fn main() {
                 if let Err(e) = gamestate_manager.push_top_state(state, &mut gamedata) {
                     error!("Failed to push gamestate: {}", e);
                 }
-                info!("Gamestate stack: {:?}", gamestate_manager.top_states);
+                debug!("Gamestate stack: ps[{:?}] stack{:?}", gamestate_manager.play_state, gamestate_manager.top_states);
             }
             gamestate::GameStateAction::PopTopState => {
                 if let Err(e) = gamestate_manager.get_top_state().pause(&mut gamedata) {

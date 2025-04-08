@@ -11,7 +11,7 @@ use macroquad::texture::DrawTextureParams;
 use crate::controls::Action;
 use crate::gamedata::GameData;
 use crate::world::example_rock::ExampleRock;
-use crate::world::interactable::{Interactable, InteractableAttribute};
+use crate::world::interactable::InteractableAttribute;
 use super::{GameState, GameStateAction, GameStateError};
 
 // todo: this is just an example of the engine
@@ -50,7 +50,6 @@ impl GameState for ExampleRockBreakGameGS {
 
     fn update(&mut self, _delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
         self.recently_clicked = false;
-        let rock_sprite = data.assets.rock_sprites.get(0).unwrap();
         // handle on release to ensure pause key isn't spammed when held (was an issue)
         let actions = data.control_handler.get_actions();
         for action in actions {

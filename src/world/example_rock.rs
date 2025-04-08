@@ -4,7 +4,6 @@ use crate::assets::GlobalAssets;
 use crate::gamedata::GameData;
 use crate::gamestate::example_rock_break_game::ExampleRockBreakGameGS;
 use crate::gamestate::GameStateAction;
-use crate::player::Player;
 use crate::world::interactable::{Interactable, InteractableAttribute};
 
 #[derive(Clone, Debug)]

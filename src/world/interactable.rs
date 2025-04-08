@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use macroquad::prelude::*;
 use crate::assets::GlobalAssets;
 use crate::gamedata::GameData;

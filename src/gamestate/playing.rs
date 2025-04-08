@@ -7,7 +7,6 @@ use crate::controls::Action;
 use crate::gamedata::GameData;
 use crate::gamestate::pause::PauseGS;
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
-use crate::world::interactable::Interactable;
 use super::{GameState, GameStateAction, GameStateError};
 
 #[derive(Clone, Debug)]
@@ -79,7 +78,7 @@ impl GameState for PlayingGS {
         Ok(GameStateAction::NoOp)
     }
 
-    fn pause(&mut self, data: &mut GameData) -> Result<(), GameStateError> {
+    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
         self.paused = true;
         Ok(())
     }

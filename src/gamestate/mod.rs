@@ -1,6 +1,5 @@
 use std::{fmt::{self, Display, Formatter}, time::Duration};
 use std::fmt::Debug;
-use crate::assets::GlobalAssets;
 use crate::gamedata::GameData;
 
 pub mod playing;
