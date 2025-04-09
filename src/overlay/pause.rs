@@ -3,23 +3,23 @@ use std::time::Duration;
 use macroquad::{color::Color, shapes::draw_rectangle, window::{screen_height, screen_width}};
 use crate::controls::{Action, ControlHandler};
 use crate::gamedata::GameData;
-use super::{GameState, GameStateAction, GameStateError};
+use crate::overlay::{Overlay, OverlayAction, OverlayError};
 
 #[derive(Debug)]
-pub struct PauseGS {}
+pub struct PauseOverlay {}
 
-impl PauseGS {
+impl PauseOverlay {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl GameState for PauseGS {
+impl Overlay for PauseOverlay {
 
-    fn update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<GameStateAction, GameStateError> {
+    fn update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<OverlayAction, OverlayError> {
         let control_handler = ControlHandler::load();
         if let Err(e) = control_handler {
-            return Err(GameStateError::RuntimeError(e));
+            return Err(OverlayError::Update(e));
         }
         let control_handler = control_handler.unwrap();
         // handle on release to ensure pause key isn't spammed when held (was an issue)
@@ -31,7 +31,7 @@ impl GameState for PauseGS {
                     //     return Err(e);
                     // }
                     // pop the top state
-                    return Ok(GameStateAction::PopTopState);
+                    return Ok(OverlayAction::Exit);
                 }
                 // todo: UI stuff
                 _ => {
@@ -39,28 +39,18 @@ impl GameState for PauseGS {
                 }
             }
         }
-        Ok(GameStateAction::NoOp)
+        Ok(OverlayAction::NoOp)
     }
 
-    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
-        Ok(())
-    }
-
-    fn restore(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
-        Ok(())
-    }
-
-    fn draw(&self, _data: &mut GameData) -> Result<(), GameStateError> {
+    fn draw(&self, _data: &mut GameData) -> Result<(), OverlayError> {
         // draw a semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width(), screen_height(), Color::new(0.0, 0.0, 0.0, 0.5));
 
         Ok(())
     }
 
-    fn get_name(&self) -> String {
-        "Paused".to_string()
+    fn draw_below(&self) -> bool {
+        true
     }
-
-    fn is_overlay(&self) -> bool { true }
 
 }

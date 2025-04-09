@@ -29,9 +29,7 @@ impl ExampleRock {
 
 impl Interactable for ExampleRock {
     fn interact(&mut self) -> Result<GameStateAction, crate::gamestate::GameStateError> {
-        Ok(GameStateAction::PushTopState(
-            ExampleRockBreakGameGS::new(self.id)?,
-        ))
+        todo!("Spawn the rock break minigame")
     }
 
     fn get_name(&self) -> String {

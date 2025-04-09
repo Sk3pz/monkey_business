@@ -1,6 +1,7 @@
 use std::time::Instant;
 use gamestate::GameState;
 use macroquad::prelude::*;
+use crate::overlay::OverlayManager;
 use crate::world::World;
 /***
  # SAVED RESOURCES:
@@ -24,11 +25,16 @@ mod assets;
 mod gamedata;
 mod settings;
 mod animation;
+mod overlay;
+mod minigame;
 /***
  * TODO:
  *   - Better error handling + log files
  *   - Plan Story
  *   - Animation system for sprites
+ *   - Sprite / position scaling to window size
+ *   - Add a scene/world system
+ *   - Add a UI system - could use new overlay system or be drawn by the current gamestate
 ***/
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
@@ -59,10 +65,10 @@ async fn main() {
     if let Err(e) = gamestate {
         return error!("{}", e);
     }
-    let gamestate: Box<dyn GameState> = gamestate.unwrap();
+    let mut gamestate: Box<dyn GameState> = gamestate.unwrap();
 
-    // the previous gamestate
-    let mut gamestate_manager = gamestate::GameStateManager::new(gamestate);
+    // create the overlay manager
+    let mut overlay_manager = OverlayManager::new();
 
     // load the settings
     // todo: let settings = settings::Settings::load();
@@ -131,73 +137,59 @@ async fn main() {
             fps_sum / FPS_SMOOTHING_FRAMES as f32
         };
 
-        // call the gamestate's update function
-        let update_result = gamestate_manager.get_top_state().update(&delta_time, &mut gamedata);
-        if let Err(update_error) = &update_result {
-            error!("Failed to update gamestate: {}", update_error);
+        /// === UPDATE ===
+        // run the gamestate's persistent update function
+        if let Err(e) = gamestate.persistent_update(&delta_time, &mut gamedata) {
+            return error!("Failed to run persistent update: {}", e);
         }
-        let gamestate_action = update_result.unwrap();
-        match gamestate_action {
-            gamestate::GameStateAction::ChangeState(new_state) => {
-                if let Err(e) = gamestate_manager.change_play_state(new_state, &mut gamedata) {
-                    error!("Failed to change gamestate: {}", e);
-                }
+        // update the overlay
+        if let Some(r) = overlay_manager.update(&delta_time, &mut gamedata) {
+            match r {
+                Ok(action) => match action {
+                    overlay::OverlayAction::Exit => {
+                        // pop the top overlay
+                        overlay_manager.pop();
+                        // resume the gamestate
+                        if overlay_manager.len() == 0 {
+                            if let Err(e) = gamestate.restore(&mut gamedata) {
+                                return error!("Failed to restore gamestate: {}", e);
+                            }
+                        }
+                    }
+                    overlay::OverlayAction::SpawnOverlay(overlay) => overlay_manager.push(overlay),
+                    overlay::OverlayAction::NoOp => {}
+                },
+                Err(e) => return error!("Failed to update overlay: {}", e),
             }
-            gamestate::GameStateAction::PushTopState(mut state) => {
-                if let Err(e) = gamestate_manager.get_top_state().pause(&mut gamedata) {
-                    error!("Failed to pause gamestate: {}", e);
-                }
-                if let Err(e) = state.restore(&mut gamedata) {
-                    error!("Failed to restore gamestate: {}", e);
-                }
-                if let Err(e) = gamestate_manager.push_top_state(state, &mut gamedata) {
-                    error!("Failed to push gamestate: {}", e);
-                }
-                debug!("Gamestate stack: ps[{:?}] stack{:?}", gamestate_manager.play_state, gamestate_manager.top_states);
-            }
-            gamestate::GameStateAction::PopTopState => {
-                if let Err(e) = gamestate_manager.get_top_state().pause(&mut gamedata) {
-                    error!("Failed to pause gamestate: {}", e);
-                }
-                if let Err(e) = gamestate_manager.pop_top_state(&mut gamedata) {
-                    error!("Failed to pop gamestate: {}", e);
-                }
-            }
-            gamestate::GameStateAction::NoOp => { /* do nothing */ }
-        }
-
-        // == RENDER ==
-
-        // call the gamestate's draw function
-
-        // Determine how many states (from the top down) are overlays
-        let overlay_count = gamestate_manager
-            .top_states
-            .iter()
-            .rev()
-            .take_while(|s| s.is_overlay())
-            .count();
-
-        // Calculate the starting index to draw from
-        let start_index = gamestate_manager.top_states.len().saturating_sub(overlay_count);
-
-        // If all states are overlays, we need to draw the play_state first
-        if overlay_count == gamestate_manager.top_states.len() {
-            if let Err(e) = gamestate_manager.play_state.draw(&mut gamedata) {
-                error!("Failed to draw play_state: {}", e);
+        } else {
+            // update the gamestate
+            match gamestate.update(&delta_time, &mut gamedata) {
+                Ok(action) => match action {
+                    gamestate::GameStateAction::ChangeState(new_state) => gamestate = new_state,
+                    gamestate::GameStateAction::SpawnOverlay(overlay) =>{
+                        overlay_manager.push(overlay);
+                        // pause the gamestate
+                        if let Err(e) = gamestate.pause(&mut gamedata) {
+                            return error!("Failed to pause gamestate: {}", e);
+                        }
+                    },
+                    gamestate::GameStateAction::NoOp => {}
+                },
+                Err(e) => return error!("Failed to update gamestate: {}", e),
             }
         }
 
-        // Draw from the lowest relevant top_state up to the top
-        for state in gamestate_manager.top_states.iter().skip(start_index) {
-            if let Err(e) = state.draw(&mut gamedata) {
-                error!("Failed to draw gamestate: {}", e);
+        // === RENDER ===
+        // draw the gamestate
+        if overlay_manager.should_draw_gamestate() {
+            if let Err(e) = gamestate.draw(&mut gamedata) {
+                return error!("Failed to draw top gamestate: {}", e);
             }
         }
 
-        // Draw the top state (optional redundancy check, since it was already drawn above if it's the top)
-        if let Err(e) = gamestate_manager.get_top_state().draw(&mut gamedata) {
-            error!("Failed to draw top gamestate: {}", e);
+        // draw all overlays on top
+        if let Err(e) = overlay_manager.draw(&mut gamedata) {
+            return error!("Failed to draw overlay: {}", e);
         }
 
         next_frame().await;

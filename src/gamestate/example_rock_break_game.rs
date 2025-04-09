@@ -47,7 +47,6 @@ impl ExampleRockBreakGameGS {
 }
 
 impl GameState for ExampleRockBreakGameGS {
-
     fn update(&mut self, _delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
         self.recently_clicked = false;
         // handle on release to ensure pause key isn't spammed when held (was an issue)
@@ -55,7 +54,7 @@ impl GameState for ExampleRockBreakGameGS {
         for action in actions {
             match action {
                 Action::Pause => {
-                    return Ok(GameStateAction::PopTopState);
+                    todo!("Close the minigame")
                 }
                 Action::BasicAttack => {
                     if self.is_click_inside_rock() {
@@ -86,8 +85,7 @@ impl GameState for ExampleRockBreakGameGS {
 
                             data.world.add_interactable(Box::new(new_rock));
 
-                            // pop the state
-                            return Ok(GameStateAction::PopTopState);
+                            todo!("Close the minigame")
                         }
                     }
                     self.recently_clicked = false;
@@ -96,6 +94,10 @@ impl GameState for ExampleRockBreakGameGS {
             }
         }
         Ok(GameStateAction::NoOp)
+    }
+
+    fn persistent_update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
+        todo!()
     }
 
     fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {

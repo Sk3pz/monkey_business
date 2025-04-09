@@ -5,7 +5,7 @@ use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
 use macroquad::text::TextParams;
 use crate::controls::Action;
 use crate::gamedata::GameData;
-use crate::gamestate::pause::PauseGS;
+use crate::overlay::pause::PauseOverlay;
 use crate::world::player::PlayerFacing;
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
 use super::{GameState, GameStateAction, GameStateError};
@@ -107,13 +107,19 @@ impl GameState for PlayingGS {
                     self.debug = !self.debug;
                 }
                 Action::Pause => {
-                    return Ok(GameStateAction::PushTopState(Box::new(PauseGS::new())))
+                    self.paused = true;
+                    return Ok(GameStateAction::SpawnOverlay(Box::new(PauseOverlay::new())))
                 }
                 _ => { /* Other actions are not used here */ }
             }
         }
         data.world.player.apply_movement(movement, &data.world.interactables, &data.assets, delta_time.as_millis());
 
+        Ok(GameStateAction::NoOp)
+    }
+
+    fn persistent_update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
+        // not yet implemented
         Ok(GameStateAction::NoOp)
     }
 
