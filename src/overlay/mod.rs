@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use std::time::Duration;
+use crate::error::GameError;
 use crate::gamedata::GameData;
 
 pub mod pause;
@@ -10,27 +10,11 @@ pub enum OverlayAction {
     SpawnOverlay(Box<dyn Overlay>),
 }
 
-#[derive(Debug, Clone)]
-pub enum OverlayError {
-    Initialization(String),
-    Update(String),
-    Draw(String),
-}
-
-impl Display for OverlayError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OverlayError::Initialization(msg) => write!(f, "Overlay Initialization Error: {}", msg),
-            OverlayError::Update(msg) => write!(f, "Overlay Update Error: {}", msg),
-            OverlayError::Draw(msg) => write!(f, "Overlay Render Error: {}", msg),
-        }
-    }
-}
-
 pub trait Overlay {
 
-    fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<OverlayAction, OverlayError>;
-    fn draw(&self, data: &mut GameData) -> Result<(), OverlayError>;
+    fn init(&mut self, data: &mut GameData) -> Result<(), GameError>;
+    fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<OverlayAction, GameError>;
+    fn draw(&self, data: &mut GameData) -> Result<(), GameError>;
     fn draw_below(&self) -> bool {
         false
     }
@@ -47,8 +31,11 @@ impl OverlayManager {
         }
     }
 
-    pub fn push(&mut self, overlay: Box<dyn Overlay>) {
+    pub fn push(&mut self, mut overlay: Box<dyn Overlay>, data: &mut GameData) -> Result<(), GameError> {
+        overlay.init(data)?;
         self.overlays.push(overlay);
+
+        Ok(())
     }
 
     pub fn pop(&mut self) {
@@ -64,7 +51,7 @@ impl OverlayManager {
     }
 
     /// returns None if there are no overlays to update (signaling to update the gamestate)
-    pub fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Option<Result<OverlayAction, OverlayError>> {
+    pub fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Option<Result<OverlayAction, GameError>> {
         if let Some(overlay) = self.get_top_mut() {
             Some(overlay.update(delta_time, data))
         } else {
@@ -90,7 +77,7 @@ impl OverlayManager {
 
     /// draws overlays until it reaches the bottom or an overlay that does not draw below
     /// @return true if the gamestate should be drawn
-    pub fn draw(&self, data: &mut GameData) -> Result<(), OverlayError> {
+    pub fn draw(&self, data: &mut GameData) -> Result<(), GameError> {
         // get how deep to draw (until an overlay that does not draw below or until there are no overlays)
         let draw_from = self.overlays.iter().rev()
             .position(|o| !o.draw_below())

@@ -4,14 +4,15 @@ use macroquad::prelude::{draw_texture_ex, screen_height, screen_width, DrawTextu
 use macroquad::rand::gen_range;
 use crate::assets::GlobalAssets;
 use crate::controls::Action;
+use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::ui::tooltip::{tooltip, ToolTipCard};
-use crate::world::example_rock::ExampleRock;
+use crate::world::rock::Rock;
 use crate::world::interactable::{Interactable, InteractableAttribute};
 use crate::world::player::{Player, PlayerFacing};
 
 pub mod interactable;
-pub mod example_rock;
+pub mod rock;
 pub mod player;
 
 pub struct World {
@@ -20,7 +21,7 @@ pub struct World {
 }
 
 impl World {
-    pub async fn new() -> Result<Self, String> {
+    pub async fn new(assets: &GlobalAssets) -> Result<Self, String> {
         let player = Player::new().await;
         if let Err(e) = player {
             return Err(format!("Failed to initialize player: {}", e));
@@ -30,7 +31,7 @@ impl World {
         let mut interactables: Vec<Box<dyn Interactable>> = Vec::new();
 
         for x in 0..5 {
-            let rock = ExampleRock::new(x, "Rock Pile".to_string(), vec2(gen_range(20.0, screen_width() - 20.0), gen_range(20.0, screen_height() - 20.0)), gen_range(0.0, 360.0));
+            let rock = Rock::new(assets, x, "Rock Pile".to_string(), vec2(gen_range(20.0, screen_width() - 20.0), gen_range(20.0, screen_height() - 20.0)), gen_range(0.0, 360.0));
 
             interactables.push(Box::new(rock));
         }
@@ -88,19 +89,18 @@ impl World {
         None
     }
 
-    pub fn draw_interactables(&self, assets: &GlobalAssets) {
-        for interactable in &self.interactables {
-            let interactable_pos = interactable.get_pos();
-            draw_texture_ex(
-                &interactable.get_sprite(assets),
-                interactable_pos.x, interactable_pos.y,
-                WHITE,
-                DrawTextureParams {
-                    rotation: interactable.get_rotation(),
-                    ..Default::default()
-                }
-            );
+    pub fn update_interactables(&mut self, delta_time: f32) -> Result<(), GameError> {
+        for interactable in &mut self.interactables {
+            interactable.update_animation(delta_time)?;
         }
+        Ok(())
+    }
+
+    pub fn draw_interactables(&self, data: &GameData) -> Result<(), GameError> {
+        for interactable in &self.interactables {
+            interactable.draw(data)?;
+        }
+        Ok(())
     }
 
     pub fn handle_tooltips(&self, data: &GameData) {

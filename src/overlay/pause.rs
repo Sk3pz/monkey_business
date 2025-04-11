@@ -2,8 +2,9 @@ use std::time::Duration;
 
 use macroquad::{color::Color, shapes::draw_rectangle, window::{screen_height, screen_width}};
 use crate::controls::{Action, ControlHandler};
+use crate::error::GameError;
 use crate::gamedata::GameData;
-use crate::overlay::{Overlay, OverlayAction, OverlayError};
+use crate::overlay::{Overlay, OverlayAction};
 
 #[derive(Debug)]
 pub struct PauseOverlay {}
@@ -16,10 +17,14 @@ impl PauseOverlay {
 
 impl Overlay for PauseOverlay {
 
-    fn update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<OverlayAction, OverlayError> {
+    fn init(&mut self, _data: &mut GameData) -> Result<(), GameError> {
+        Ok(())
+    }
+
+    fn update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<OverlayAction, GameError> {
         let control_handler = ControlHandler::load();
         if let Err(e) = control_handler {
-            return Err(OverlayError::Update(e));
+            return Err(GameError::Update(e));
         }
         let control_handler = control_handler.unwrap();
         // handle on release to ensure pause key isn't spammed when held (was an issue)
@@ -42,7 +47,7 @@ impl Overlay for PauseOverlay {
         Ok(OverlayAction::NoOp)
     }
 
-    fn draw(&self, _data: &mut GameData) -> Result<(), OverlayError> {
+    fn draw(&self, _data: &mut GameData) -> Result<(), GameError> {
         // draw a semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width(), screen_height(), Color::new(0.0, 0.0, 0.0, 0.5));
 

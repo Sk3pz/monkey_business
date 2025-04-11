@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 #[derive(Clone)]
 pub struct GlobalAssets {
     pub font: Font,
-    pub rock_sprites: Vec<Texture2D>,
+    pub rock_sprite: Texture2D,
 }
 
 impl GlobalAssets {
@@ -13,18 +13,16 @@ impl GlobalAssets {
             return Err("Failed to load font".to_string());
         };
 
-        let mut rock_sprites = Vec::new();
-        let rock = load_texture("assets/sprites/example_rock.png").await;
+        let rock = load_texture("assets/sprites/Rocks floor and decor.png").await;
         if let Err(e) = rock {
             return Err(format!("Failed to load rock texture files: {}", e));
         }
         let rock_sprite = rock.unwrap();
         rock_sprite.set_filter(FilterMode::Nearest);
-        rock_sprites.push(rock_sprite);
 
         Ok(Self {
             font,
-            rock_sprites
+            rock_sprite
         })
     }
 

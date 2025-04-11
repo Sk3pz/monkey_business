@@ -4,11 +4,12 @@ use macroquad::{color::Color, math::vec2, window::clear_background};
 use macroquad::prelude::{draw_text_ex, measure_text, screen_width};
 use macroquad::text::TextParams;
 use crate::controls::Action;
+use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::overlay::pause::PauseOverlay;
 use crate::world::player::PlayerFacing;
 use crate::util::{draw_ansi_text, remove_ansii_escape_codes};
-use super::{GameState, GameStateAction, GameStateError};
+use super::{GameState, GameStateAction};
 
 #[derive(Clone, Debug)]
 pub struct PlayingGS {
@@ -17,7 +18,7 @@ pub struct PlayingGS {
 }
 
 impl PlayingGS {
-    pub fn new() -> Result<Box<Self>, GameStateError> {
+    pub fn new() -> Result<Box<Self>, GameError> {
         Ok(Box::new(Self {
             paused: false,
             debug: false,
@@ -27,7 +28,7 @@ impl PlayingGS {
 
 impl GameState for PlayingGS {
 
-    fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
+    fn update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameError> {
 
         // make the player rotate towards the mouse
         // not top down anymore
@@ -85,8 +86,8 @@ impl GameState for PlayingGS {
                 }
                 Action::Interact => {
                     if let Some(id) = data.world.is_click_on_interactable(data) {
-                        if let Some(interactable) = data.world.get_mut_interactable_by_id(id) {
-                            return interactable.interact();
+                        if let Some(interactable) = data.world.get_mut_interactable_by_id(id) { // First mutable borrow
+                            return interactable.interact(); // second borrow, fails both when immutable and mutable
                         }
                     }
                 }
@@ -113,39 +114,44 @@ impl GameState for PlayingGS {
                 _ => { /* Other actions are not used here */ }
             }
         }
-        data.world.player.apply_movement(movement, &data.world.interactables, &data.assets, delta_time.as_millis());
+        data.world.player.apply_movement(movement, &data.world.interactables, delta_time.as_millis());
 
         Ok(GameStateAction::NoOp)
     }
 
-    fn persistent_update(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<GameStateAction, GameStateError> {
+    fn persistent_update(&mut self, _delta_time: &Duration, _data: &mut GameData) -> Result<GameStateAction, GameError> {
         // not yet implemented
         Ok(GameStateAction::NoOp)
     }
 
-    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameStateError> {
+    fn pause(&mut self, _data: &mut GameData) -> Result<(), GameError> {
         self.paused = true;
         Ok(())
     }
 
-    fn restore(&mut self, data: &mut GameData) -> Result<(), GameStateError> {
+    fn restore(&mut self, data: &mut GameData) -> Result<(), GameError> {
         // Refresh everything that needs to be
         if let Err(e) = data.reload_controls() {
-            return Err(GameStateError::RuntimeError(format!("Failed to reload controls: {}", e)));
+            return Err(GameError::Update(format!("Failed to reload controls: {}", e)));
         }
         self.paused = false;
         Ok(())
     }
 
-    fn draw(&self, data: &mut GameData) -> Result<(), GameStateError> {
+    fn draw(&mut self, delta_time: &Duration, data: &mut GameData) -> Result<(), GameError> {
         // clear the background and give a default color
         clear_background(Color::from_hex(0x453e3d));
 
         // draw the player
         data.world.draw_player();
 
+        // update the interactable's animation frames
+        if let Err(e) = data.world.update_interactables(delta_time.as_millis() as f32) {
+            return Err(GameError::Update(format!("Failed to update interactables: {}", e)));
+        }
+
         // draw the interactables
-        data.world.draw_interactables(&data.assets);
+        data.world.draw_interactables(data)?;
 
         if self.debug {
             let spacing = 4.0;

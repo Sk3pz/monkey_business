@@ -27,6 +27,7 @@ mod settings;
 mod animation;
 mod overlay;
 mod minigame;
+mod error;
 /***
  * TODO:
  *   - Better error handling + log files
@@ -89,7 +90,7 @@ async fn main() {
     control_handler.set_sprint_toggle(control_handler.is_sprint_toggle());
 
     // create the world
-    let world = World::new().await;
+    let world = World::new(&global_assets).await;
     if let Err(e) = world {
         return error!("Failed to create world: {}", e);
     }
@@ -137,7 +138,7 @@ async fn main() {
             fps_sum / FPS_SMOOTHING_FRAMES as f32
         };
 
-        /// === UPDATE ===
+        // === UPDATE ===
         // run the gamestate's persistent update function
         if let Err(e) = gamestate.persistent_update(&delta_time, &mut gamedata) {
             return error!("Failed to run persistent update: {}", e);
@@ -156,7 +157,10 @@ async fn main() {
                             }
                         }
                     }
-                    overlay::OverlayAction::SpawnOverlay(overlay) => overlay_manager.push(overlay),
+                    overlay::OverlayAction::SpawnOverlay(overlay) => match overlay_manager.push(overlay, &mut gamedata) {
+                        Ok(_) => {}
+                        Err(e) => return error!("Failed to push overlay: {}", e),
+                    },
                     overlay::OverlayAction::NoOp => {}
                 },
                 Err(e) => return error!("Failed to update overlay: {}", e),
@@ -167,7 +171,10 @@ async fn main() {
                 Ok(action) => match action {
                     gamestate::GameStateAction::ChangeState(new_state) => gamestate = new_state,
                     gamestate::GameStateAction::SpawnOverlay(overlay) =>{
-                        overlay_manager.push(overlay);
+                        match overlay_manager.push(overlay,&mut gamedata) {
+                            Ok(_) => {}
+                            Err(e) => return error!("Failed to push overlay: {}", e),
+                        }
                         // pause the gamestate
                         if let Err(e) = gamestate.pause(&mut gamedata) {
                             return error!("Failed to pause gamestate: {}", e);
@@ -182,7 +189,7 @@ async fn main() {
         // === RENDER ===
         // draw the gamestate
         if overlay_manager.should_draw_gamestate() {
-            if let Err(e) = gamestate.draw(&mut gamedata) {
+            if let Err(e) = gamestate.draw(&delta_time, &mut gamedata) {
                 return error!("Failed to draw top gamestate: {}", e);
             }
         }
