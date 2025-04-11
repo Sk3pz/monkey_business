@@ -7,6 +7,7 @@ use crate::controls::Action;
 use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::ui::tooltip::{tooltip, ToolTipCard};
+use crate::util::{get_sprite_scale, scale_position};
 use crate::world::rock::Rock;
 use crate::world::interactable::{Interactable, InteractableAttribute};
 use crate::world::player::{Player, PlayerFacing};
@@ -65,12 +66,15 @@ impl World {
     }
 
     pub fn draw_player(&self) {
+        let postion_scale = scale_position(self.player.pos);
+
         draw_texture_ex(
             &self.player.sprite,
-            self.player.pos.x, self.player.pos.y,
+            postion_scale.x, postion_scale.y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(32.0, 32.0)),
+                dest_size: Some(get_sprite_scale()),
+                //dest_size: Some(vec2(32.0, 32.0)),
                 rotation: self.player.rotation,
                 flip_x: self.player.facing == PlayerFacing::UpLeft || self.player.facing == PlayerFacing::DownLeft,
                 flip_y: false, // never true because of isometric projection
@@ -109,15 +113,16 @@ impl World {
             if interactable.is_mouse_over(data) {
                 if interactable.distance_from_player(data) <= 100.0 {
                     let interact_btn = data.control_handler.get_binding(&Action::Interact).unwrap();
-                    let clicks = match interactable.get_attribute("clicks").unwrap_or(InteractableAttribute::UInt(0)) {
-                        InteractableAttribute::UInt(i) => i,
-                        _ => 0
-                    };
+                    // let clicks = match interactable.get_attribute("clicks").unwrap_or(InteractableAttribute::UInt(0)) {
+                    //     InteractableAttribute::UInt(i) => i,
+                    //     _ => 0
+                    // };
                     let card = ToolTipCard {
                         title: interactable.get_name(),
                         lines: vec![format!("{}Press {}{}{} to interact.", better_term::Color::White,
                                             better_term::Color::BrightYellow, interact_btn, better_term::Color::White),
-                                    format!("{}Clicks: {}{}", better_term::Color::White, better_term::Color::BrightYellow, clicks)],
+                                    //format!("{}Clicks: {}{}", better_term::Color::White, better_term::Color::BrightYellow, clicks)
+                        ],
                     };
                     tooltip(card, &data.assets);
                 } else {

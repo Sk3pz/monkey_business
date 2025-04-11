@@ -2,6 +2,7 @@ use std::time::Instant;
 use gamestate::GameState;
 use macroquad::prelude::*;
 use crate::overlay::OverlayManager;
+use crate::util::get_sprite_scale;
 use crate::world::World;
 /***
  # SAVED RESOURCES:
@@ -32,26 +33,33 @@ mod error;
  * TODO:
  *   - Better error handling + log files
  *   - Plan Story
- *   - Sprite / position scaling to window size
  *   - Add a scene/world system
  *   - Add a UI system - could use new overlay system or be drawn by the current gamestate
+ *   - Particle System
 ***/
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
 
 const DEBUG_OUTPUT: bool = cfg!(debug_assertions);
 
+const BASE_WINDOW_SIZE: (i32, i32) = (1000, 700);
+
+// todo: make it default fullscreen?
 fn window_config() -> Conf {
     Conf {
         window_title: "Monkey Business".to_string(),
-        window_width: 800,
-        window_height: 600,
+        window_width: BASE_WINDOW_SIZE.0,
+        window_height: BASE_WINDOW_SIZE.1,
         ..Default::default()
     }
 }
 
 #[macroquad::main(window_config)]
 async fn main() {
+    // windowed fullscreen cheat
+    let (width, height) = (screen_width(), screen_height());
+    set_fullscreen(false);
+    request_new_screen_size(width, height);
 
     // create the global assets object
     let global_assets = assets::GlobalAssets::load().await;

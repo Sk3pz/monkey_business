@@ -6,6 +6,7 @@ use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::gamestate::GameStateAction;
 use crate::minigame::mine_rock::MineRock;
+use crate::util::get_sprite_scale;
 use crate::world::interactable::{Interactable, InteractableAttribute};
 
 #[derive(Clone, Debug)]
@@ -66,7 +67,7 @@ impl Interactable for Rock {
     }
 
     fn draw(&self, _data: &GameData) -> Result<(), GameError> {
-        self.animator.draw(self.pos, Some(self.rotation), None);
+        self.animator.draw(self.get_scaled_pos(), Some(self.rotation), None);
         Ok(())
     }
 
@@ -91,12 +92,6 @@ impl Interactable for Rock {
             clicks: self.clicks.clone(),
             animator: self.animator.clone(),
         })
-    }
-
-    fn is_mouse_over(&self, _data: &GameData) -> bool {
-        let mouse_pos = vec2(mouse_position().0, mouse_position().1);
-        let rect = Rect::new(self.pos.x, self.pos.y, self.get_sprite_size().x, self.get_sprite_size().y);
-        rect.contains(mouse_pos)
     }
 
     fn distance_from_player(&self, data: &GameData) -> f32 {

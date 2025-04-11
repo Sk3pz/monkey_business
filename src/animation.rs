@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use macroquad::math::Rect;
 use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D, Vec2, WHITE};
+use crate::util::get_sprite_scale;
 
 #[derive(Clone, Debug)]
 pub struct Animation {
@@ -85,12 +86,18 @@ impl Animator {
         }
     }
 
-    pub fn draw(&self, position: Vec2, rotation: Option<f32>, scale: Option<Vec2>) {
+    pub fn draw(&self, position: Vec2, rotation: Option<f32>, override_scale: Option<Vec2>) {
         if let Some(anim) = self.animations.get(&self.current_animation) {
             let frame_index = anim.start_frame + self.current_frame;
             let cols = (self.texture.width() / self.frame_size.x) as usize;
             let frame_x = (frame_index % cols) as f32 * self.frame_size.x;
             let frame_y = (frame_index / cols) as f32 * self.frame_size.y;
+
+            let scale = if let Some(scale) = override_scale {
+                scale
+            } else {
+                get_sprite_scale()
+            };
 
             draw_texture_ex(
                 &self.texture,
@@ -105,7 +112,8 @@ impl Animator {
                         h: self.frame_size.y,
                     }),
                     rotation: rotation.unwrap_or(0.0),
-                    dest_size: scale,
+                    //dest_size: scale,
+                    dest_size: Some(scale),
                     ..Default::default()
                 },
             );

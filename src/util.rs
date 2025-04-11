@@ -1,8 +1,26 @@
 use macroquad::prelude::*;
 use std::f32::consts::PI;
 use crate::assets::GlobalAssets;
+use crate::BASE_WINDOW_SIZE;
 
 const DEFAULT_COLOR: Color = WHITE;
+
+const BASE_SCALE_FACTOR: f32 = 32.0;
+
+/// Get the scale that should be applied to sprites to fit the screen size, where BASE_WINDOW_SIZE is the base window size where sprites are 32x32
+pub fn get_sprite_scale() -> Vec2 {
+    // scale height the same as width
+    let scale = screen_width() / BASE_WINDOW_SIZE.0 as f32;
+
+    vec2(scale * BASE_SCALE_FACTOR, scale * BASE_SCALE_FACTOR)
+}
+
+pub fn scale_position(pos: Vec2) -> Vec2 {
+    // scale position based on window size
+    let scale_x = screen_width() / BASE_WINDOW_SIZE.0 as f32;
+    let scale_y = screen_height() / BASE_WINDOW_SIZE.1 as f32;
+    vec2(pos.x * scale_x, pos.y * scale_y)
+}
 
 fn generate_rounded_perimeter(pos: Vec2, size: Vec2, radius: f32, segments_per_corner: u16) -> Vec<Vec2> {
     let mut points = Vec::new();
