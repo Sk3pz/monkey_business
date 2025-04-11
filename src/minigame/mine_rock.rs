@@ -137,17 +137,17 @@ impl Overlay for MineRock {
         Some(rock.get_rotation()), Some(scale));
 
         // draw large text at the bottom of the screen displaying the number of clicks
-        let text = format!("Clicks: {}", self.clicks);
-        let text_size = measure_text(&text, Some(&data.assets.font), 32, 1.0);
-        draw_text_ex(&text,
-                     screen_width() / 2.0 - text_size.width / 2.0,
-                     screen_height() - text_size.height * 2.0,
-                     macroquad::text::TextParams {
-                         font: Some(&data.assets.font),
-                         font_size: 32,
-                         color: WHITE,
-                         ..Default::default()
-                     });
+        // let text = format!("Clicks: {}", self.clicks);
+        // let text_size = measure_text(&text, Some(&data.assets.font), 32, 1.0);
+        // draw_text_ex(&text,
+        //              screen_width() / 2.0 - text_size.width / 2.0,
+        //              screen_height() - text_size.height * 2.0,
+        //              macroquad::text::TextParams {
+        //                  font: Some(&data.assets.font),
+        //                  font_size: 32,
+        //                  color: WHITE,
+        //                  ..Default::default()
+        //              });
 
         Ok(())
     }

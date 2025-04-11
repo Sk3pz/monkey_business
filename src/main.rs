@@ -32,7 +32,6 @@ mod error;
  * TODO:
  *   - Better error handling + log files
  *   - Plan Story
- *   - Animation system for sprites
  *   - Sprite / position scaling to window size
  *   - Add a scene/world system
  *   - Add a UI system - could use new overlay system or be drawn by the current gamestate
