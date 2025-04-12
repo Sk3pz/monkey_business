@@ -30,6 +30,7 @@ mod overlay;
 mod minigame;
 mod error;
 mod startup;
+
 /***
  * TODO:
  *   - Better error handling + log files
@@ -37,6 +38,9 @@ mod startup;
  *   - Add a scene/world system
  *   - Add a UI system - could use new overlay system or be drawn by the current gamestate
  *   - Particle System
+ *   - Fix scaling system (when window is resized rocks dont respawn)
+ *   - Fix wall collision system (Player can go off right and down)
+ *   - Add a settings menu
 ***/
 
 const FPS_SMOOTHING_FRAMES: usize = 30;
