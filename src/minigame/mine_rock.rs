@@ -1,8 +1,8 @@
 use std::time::Duration;
-use macroquad::color::{Color, WHITE};
+use macroquad::color::Color;
 use macroquad::input::mouse_position;
 use macroquad::math::{vec2, Rect};
-use macroquad::prelude::{draw_rectangle, draw_text_ex, measure_text, screen_height, screen_width};
+use macroquad::prelude::{draw_rectangle, screen_height, screen_width};
 use macroquad::rand::gen_range;
 use crate::controls::Action;
 use crate::error::GameError;

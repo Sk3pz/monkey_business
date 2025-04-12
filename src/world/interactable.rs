@@ -35,7 +35,6 @@ pub trait Interactable {
     fn is_mouse_over(&self, _data: &GameData) -> bool {
         let mouse_pos = vec2(mouse_position().0, mouse_position().1);
         let sprite_scale = get_sprite_scale();
-        let sprite_size = self.get_sprite_size();
         let pos = self.get_scaled_pos();
         let rect = Rect::new(pos.x, pos.y, sprite_scale.x, sprite_scale.y);
         rect.contains(mouse_pos)

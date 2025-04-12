@@ -2,7 +2,7 @@ use std::time::Instant;
 use gamestate::GameState;
 use macroquad::prelude::*;
 use crate::overlay::OverlayManager;
-use crate::util::get_sprite_scale;
+use crate::startup::startup_loading_screen;
 use crate::world::World;
 /***
  # SAVED RESOURCES:
@@ -29,6 +29,7 @@ mod animation;
 mod overlay;
 mod minigame;
 mod error;
+mod startup;
 /***
  * TODO:
  *   - Better error handling + log files
@@ -61,13 +62,6 @@ async fn main() {
     set_fullscreen(false);
     request_new_screen_size(width, height);
 
-    // create the global assets object
-    let global_assets = assets::GlobalAssets::load().await;
-    if let Err(e) = global_assets {
-        return error!("Failed to load global assets: {}", e);
-    }
-    let global_assets = global_assets.unwrap();
-
     // create a dynamic gamestate object
     let gamestate = gamestate::playing::PlayingGS::new();
     if let Err(e) = gamestate {
@@ -78,39 +72,52 @@ async fn main() {
     // create the overlay manager
     let mut overlay_manager = OverlayManager::new();
 
+    let gamedata = startup_loading_screen().await;
+    if let Err(e) = gamedata {
+        return error!("Failed to load game data: {}", e);
+    }
+    let mut gamedata = gamedata.unwrap();
+
+    // // create the global assets object
+    // let global_assets = assets::GlobalAssets::load().await;
+    // if let Err(e) = global_assets {
+    //     return error!("Failed to load global assets: {}", e);
+    // }
+    // let global_assets = global_assets.unwrap();
+    //
     // load the settings
     // todo: let settings = settings::Settings::load();
-    let settings = settings::Settings {
-        volume: 1.0,
-        mute: false,
-    };
-
-    // load the control handler
-    let control_handler = controls::ControlHandler::load();
-    if let Err(e) = control_handler {
-        return error!("Failed to load control handler: {}", e);
-    }
-    let mut control_handler = control_handler.unwrap();
-    // TODO: remove this when settings are implemented properly.
-    //   this changes the bind based on the controls.dat file, which is currently the only way
-    //   to change sprinting between toggled and held
-    control_handler.set_sprint_toggle(control_handler.is_sprint_toggle());
-
-    // create the world
-    let world = World::new(&global_assets).await;
-    if let Err(e) = world {
-        return error!("Failed to create world: {}", e);
-    }
-    let world = world.unwrap();
-
-    // create the gamedata object
-    let mut gamedata = gamedata::GameData {
-        fps: 0.0,
-        assets: global_assets.clone(),
-        settings,
-        control_handler,
-        world,
-    };
+    // let settings = settings::Settings {
+    //     volume: 1.0,
+    //     mute: false,
+    // };
+    //
+    // // load the control handler
+    // let control_handler = controls::ControlHandler::load();
+    // if let Err(e) = control_handler {
+    //     return error!("Failed to load control handler: {}", e);
+    // }
+    // let mut control_handler = control_handler.unwrap();
+    // // TODO: remove this when settings are implemented properly.
+    // //   this changes the bind based on the controls.dat file, which is currently the only way
+    // //   to change sprinting between toggled and held
+    // control_handler.set_sprint_toggle(control_handler.is_sprint_toggle());
+    //
+    // // create the world
+    // let world = World::new(&global_assets).await;
+    // if let Err(e) = world {
+    //     return error!("Failed to create world: {}", e);
+    // }
+    // let world = world.unwrap();
+    //
+    // // create the gamedata object
+    // let mut gamedata = gamedata::GameData {
+    //     fps: 0.0,
+    //     assets: global_assets.clone(),
+    //     settings,
+    //     control_handler,
+    //     world,
+    // };
 
     // handle FPS calculations
     let mut last_time = Instant::now();

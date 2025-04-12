@@ -1,8 +1,6 @@
 use std::f32::consts::PI;
 use macroquad::input::mouse_position;
 use macroquad::math::{vec2, Vec2};
-use macroquad::miniquad::FilterMode;
-use macroquad::prelude::{load_texture, Texture2D};
 use macroquad::window::{screen_height, screen_width};
 use crate::world::interactable::Interactable;
 
@@ -20,7 +18,6 @@ pub enum PlayerFacing {
 #[derive(Clone)]
 pub struct Player {
     pub pos: Vec2,
-    pub sprite: Texture2D,
     pub rotation: f32,
     pub sprinting: bool,
     pub facing: PlayerFacing,
@@ -29,25 +26,15 @@ pub struct Player {
 impl Player {
     
     pub async fn new() -> Result<Self, String> {
-        
-        // player texture
-        let player = load_texture("assets/sprites/monke2.png").await;
-        if let Err(e) = player {
-            return Err(format!("Failed to load texture files: {}", e));
-        }
-        let player = player.unwrap();
-        player.set_filter(FilterMode::Nearest);
-        
         Ok(Self {
             pos: vec2(0.0, 0.0),
-            sprite: player,
             rotation: 0.0,
             sprinting: false,
             facing: PlayerFacing::UpRight,
         })
     }
 
-    pub fn apply_movement(&mut self, mut movement: Vec2, interactables: &Vec<Box<dyn Interactable>>, delta_time: u128) {
+    pub fn apply_movement(&mut self, player_sprite_size: Vec2, mut movement: Vec2, interactables: &Vec<Box<dyn Interactable>>, delta_time: u128) {
         if delta_time == 0 {
             return;
         }
@@ -62,7 +49,7 @@ impl Player {
 
         // add collisions with interactables
         for interactable in interactables {
-            let player_size = vec2(self.sprite.width(), self.sprite.height());
+            let player_size = vec2(player_sprite_size.x, player_sprite_size.y);
             let player_pos = vec2(self.pos.x - player_size.x / 2.0, self.pos.y - player_size.y / 2.0);
 
             let interactable_sprite = interactable.get_sprite_size();

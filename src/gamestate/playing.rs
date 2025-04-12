@@ -114,7 +114,8 @@ impl GameState for PlayingGS {
                 _ => { /* Other actions are not used here */ }
             }
         }
-        data.world.player.apply_movement(movement, &data.world.interactables, delta_time.as_millis());
+        let player_sprite = data.assets.player_sprite.size();
+        data.world.player.apply_movement(player_sprite, movement, &data.world.interactables, delta_time.as_millis());
 
         Ok(GameStateAction::NoOp)
     }
@@ -143,7 +144,7 @@ impl GameState for PlayingGS {
         clear_background(Color::from_hex(0x453e3d));
 
         // draw the player
-        data.world.draw_player();
+        data.world.draw_player(data);
 
         // update the interactable's animation frames
         if let Err(e) = data.world.update_interactables(delta_time.as_millis() as f32) {

@@ -9,7 +9,7 @@ use crate::gamedata::GameData;
 use crate::ui::tooltip::{tooltip, ToolTipCard};
 use crate::util::{get_sprite_scale, scale_position};
 use crate::world::rock::Rock;
-use crate::world::interactable::{Interactable, InteractableAttribute};
+use crate::world::interactable::Interactable;
 use crate::world::player::{Player, PlayerFacing};
 
 pub mod interactable;
@@ -65,11 +65,11 @@ impl World {
         self.interactables.push(interactable);
     }
 
-    pub fn draw_player(&self) {
+    pub fn draw_player(&self, data: &GameData) {
         let postion_scale = scale_position(self.player.pos);
 
         draw_texture_ex(
-            &self.player.sprite,
+            &data.assets.player_sprite,
             postion_scale.x, postion_scale.y,
             WHITE,
             DrawTextureParams {

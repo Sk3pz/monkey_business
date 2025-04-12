@@ -1,12 +1,11 @@
 use macroquad::math::Vec2;
-use macroquad::prelude::{mouse_position, vec2, Rect};
+use macroquad::prelude::vec2;
 use crate::animation::Animator;
 use crate::assets::GlobalAssets;
 use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::gamestate::GameStateAction;
 use crate::minigame::mine_rock::MineRock;
-use crate::util::get_sprite_scale;
 use crate::world::interactable::{Interactable, InteractableAttribute};
 
 #[derive(Clone, Debug)]
@@ -96,7 +95,8 @@ impl Interactable for Rock {
 
     fn distance_from_player(&self, data: &GameData) -> f32 {
         let player = &data.world.player;
-        let player_pos = vec2(player.pos.x + player.sprite.width() / 2.0, player.pos.y + player.sprite.height() / 2.0);
+        let player_sprite = &data.assets.player_sprite;
+        let player_pos = vec2(player.pos.x + player_sprite.width() / 2.0, player.pos.y + player_sprite.height() / 2.0);
         let sprite = self.get_sprite_size();
         let interactable_pos = vec2(self.pos.x + sprite.x / 2.0, self.pos.y + sprite.y / 2.0);
         let dx = interactable_pos.x - player_pos.x;

@@ -12,5 +12,5 @@ better_term = "*"
 rand = "*"
 
 [dependencies.macroquad]
-version = "0.4.14"
+version = "*"
 features = ["audio", "default"]
