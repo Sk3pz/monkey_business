@@ -58,9 +58,9 @@ fn window_config() -> Conf {
 #[macroquad::main(window_config)]
 async fn main() {
     // windowed fullscreen cheat
-    let (width, height) = (screen_width(), screen_height());
-    set_fullscreen(false);
-    request_new_screen_size(width, height);
+    // let (width, height) = (screen_width(), screen_height());
+    // set_fullscreen(false);
+    // request_new_screen_size(width, height);
 
     // create a dynamic gamestate object
     let gamestate = gamestate::playing::PlayingGS::new();

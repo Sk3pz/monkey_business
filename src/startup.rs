@@ -1,4 +1,4 @@
-use macroquad::color::{DARKGRAY, GREEN};
+use macroquad::color::{Color, DARKGRAY, GREEN};
 use macroquad::prelude::{clear_background, draw_texture_ex, get_time, next_frame, screen_height, screen_width, vec2, DrawTextureParams, FilterMode, Texture2D, BLACK, WHITE};
 use crate::assets;
 use crate::error::GameError;
@@ -8,7 +8,7 @@ use crate::util::draw_rounded_rect;
 
 const BANANA_BYTES: &[u8] = include_bytes!("../assets/sprites/engine_logo.png");
 
-async fn draw_loading_screen_frame(percentage: usize, banana_texture: &Texture2D) {
+async fn draw_loading_screen_frame(percentage: usize, banana_texture: &Texture2D, monke: Option<&Texture2D>) {
     clear_background(BLACK);
 
     let banana_scale = 512.0;
@@ -25,7 +25,7 @@ async fn draw_loading_screen_frame(percentage: usize, banana_texture: &Texture2D
         },
     );
 
-    let progress_bar_width = 480.0;
+    let progress_bar_width = 126.0; //480.0;
     let progress_bar_height = 16.0;
 
     let progress_bar_radius = 2.0;
@@ -42,34 +42,41 @@ async fn draw_loading_screen_frame(percentage: usize, banana_texture: &Texture2D
         vec2(progress_bar_x, progress_bar_y),
         vec2(progress_bar_width, progress_bar_height),
         progress_bar_radius,
-        DARKGRAY,
-        false,
-        None,
+        Color::from_rgba(0, 0, 0, 255),
+        true,
+        Some(BLACK),
     );
     draw_rounded_rect(
         vec2(progress_bar_inner_x, progress_bar_inner_y),
         vec2(progress_bar_inner_width, progress_bar_height),
         progress_bar_radius,
-        GREEN,
-        false,
-        None,
+        Color::from_rgba(222, 159, 71, 255),
+        true,
+        Some(BLACK),
     );
 
-    next_frame().await;
-}
-
-pub async fn sleep(secs: f64) {
-    let start = get_time();
-    while get_time() - start < secs {
-        next_frame().await;
+    // draw the monkey sprite where the progress bar is
+    if let Some(monke) = monke {
+        draw_texture_ex(
+            monke,
+            progress_bar_x + progress_bar_inner_width - 16.0,
+            screen_height() / 2.0 - 16.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(32.0, 32.0)),
+                ..Default::default()
+            },
+        );
     }
+
+    next_frame().await;
 }
 
 pub async fn startup_loading_screen() -> Result<GameData, GameError> {
     let banana_texture = Texture2D::from_file_with_format(BANANA_BYTES, Some(macroquad::prelude::ImageFormat::Png));
     banana_texture.set_filter(FilterMode::Nearest);
 
-    draw_loading_screen_frame(0, &banana_texture).await;
+    draw_loading_screen_frame(0, &banana_texture, None).await;
 
     // Load assets
     let assets = match assets::GlobalAssets::load().await {
@@ -79,7 +86,7 @@ pub async fn startup_loading_screen() -> Result<GameData, GameError> {
         }
     };
 
-    draw_loading_screen_frame(1, &banana_texture).await;
+    draw_loading_screen_frame(2, &banana_texture, Some(&assets.player_sprite)).await;
 
     //let settings = crate::settings::Settings::load();
     let settings = Settings {
@@ -94,7 +101,7 @@ pub async fn startup_loading_screen() -> Result<GameData, GameError> {
         }
     };
 
-    draw_loading_screen_frame(5, &banana_texture).await;
+    draw_loading_screen_frame(5, &banana_texture,Some(&assets.player_sprite)).await;
 
     let world = match crate::world::World::new(&assets).await {
         Ok(w) => w,
@@ -103,12 +110,12 @@ pub async fn startup_loading_screen() -> Result<GameData, GameError> {
         }
     };
 
-    draw_loading_screen_frame(10, &banana_texture).await;
+    draw_loading_screen_frame(7, &banana_texture, Some(&assets.player_sprite)).await;
 
 
     // Simulate loading
-    for i in 10..=100 {
-        draw_loading_screen_frame(i, &banana_texture).await;
+    for i in 8..=100 {
+        draw_loading_screen_frame(i, &banana_texture, Some(&assets.player_sprite)).await;
         for _j in 0..10000000 {
             // avoid compiler optimizations:
             let _ = i * 2;

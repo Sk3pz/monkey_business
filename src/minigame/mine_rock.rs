@@ -4,10 +4,12 @@ use macroquad::input::mouse_position;
 use macroquad::math::{vec2, Rect};
 use macroquad::prelude::{draw_rectangle, screen_height, screen_width};
 use macroquad::rand::gen_range;
+use crate::{debug, BASE_WINDOW_SIZE};
 use crate::controls::Action;
 use crate::error::GameError;
 use crate::gamedata::GameData;
 use crate::overlay::{Overlay, OverlayAction};
+use crate::util::scale_position;
 use crate::world::rock::Rock;
 use crate::world::interactable::InteractableAttribute;
 
@@ -88,9 +90,11 @@ impl Overlay for MineRock {
                             }
 
                             // add a new rock to the world
+                            let pos = scale_position(vec2(gen_range(0.0, BASE_WINDOW_SIZE.0 as f32), gen_range(0.0, BASE_WINDOW_SIZE.1 as f32)));
+                            debug!("Rock at {}", pos); // todo this is broken if the window is not default size
                             let new_rock = Rock::new(&data.assets, self.rock_id,
                                                      "Rock Pile".to_string(),
-                                                     vec2(gen_range(20.0, screen_width() - 20.0), gen_range(20.0, screen_height() - 20.0)),
+                                                     scale_position(vec2(gen_range(0.0, BASE_WINDOW_SIZE.0 as f32), gen_range(0.0, BASE_WINDOW_SIZE.1 as f32))),
                                                      gen_range(0.0, 360.0));
 
                             data.world.add_interactable(Box::new(new_rock));
